@@ -5,6 +5,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const http = require('http');        // ← built into Node, no install needed
 const connectDB = require('./config/db');
+const initSocket = require('./socket/socket');
 
 dotenv.config();
 connectDB();
@@ -14,6 +15,8 @@ const app = express();
 // http.createServer wraps your Express app
 // Socket.io needs this raw HTTP server later — that's the only reason we do this
 const httpServer = http.createServer(app);
+
+initSocket(httpServer);
 
 app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
 app.use(express.json());

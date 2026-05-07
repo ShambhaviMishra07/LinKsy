@@ -18,7 +18,7 @@ router.post('/register', async (req, res) =>{
        //saltRounds = 10 means it runs the hashing algo 2^10 =1024 times
        //if more rounds are allowed then its harder to crack but slower so 10 is preferrable.
 
-       const hashedPassword = await bcrypt.js(password, 10);
+       const hashedPassword = await bcrypt.hash(password, 10);
 
        //3. save user to database
        const user = await User.create({
@@ -35,7 +35,7 @@ router.post('/register', async (req, res) =>{
       const token = jwt.sign(
         {userId: user._id, username: user.username},
         process.env.JWT_SECRET,
-        {expiredIn: '7d'}
+        {expiresIn: '7d'}
       );
 
       res.status(201).json({
@@ -68,9 +68,9 @@ router.post('/login', async (req, res) => {
 
     //3. create and send JWT- same as register
     const token = jwt.sign({
-        userId: user.id, username: user.username
+        userId: user._id, username: user.username
     }, 
-    process.envJWT_SECRET,
+    process.env.JWT_SECRET,
     {expiresIn: '7d'}
 );
 res.json({
