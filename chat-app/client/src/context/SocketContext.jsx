@@ -1,48 +1,64 @@
-import {createContext, useContext, useEffect, useState} from 'react';
-import {io} from 'socket.io-client';
+// client/src/context/SocketContext.jsx
+
+import { createContext, useContext, useEffect, useState } from 'react';
+import { io } from 'socket.io-client';
 
 const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
-    const [socket, setSocket] = useState(null);
-    const [isConnected, setIsConnected] = useState(false);
+  const [socket, setSocket] = useState(null);
+  const [isConnected, setIsConnected] = useState(false);
 
-    useEffect(() => {
-        const token = localStorage.getItem('token');
-        if(!token) return ; //don't connect if not logged in
+  const connectSocket = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
 
-        //create the socket connection
-        //auth.token is how we pass jwt during the websocket handshake
-        // http headers don't work for websockets, this is the standard way
+    // If a socket already exists, disconnect it first
+    // This prevents double connections
+    setSocket(prev => {
+      if (prev) prev.disconnect();
+      return null;
+    });
 
-        const newSocket = io('http://localhost:5000',{
-            auth: {token}
-        });
+    const newSocket = io('http://localhost:5000', {
+      auth: { token },
+      // These options make reconnection more reliable
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
 
-        //built-in socket.io events
-        newSocket.on('connect' , () => {
-            console.log('socket connected', newSocket.id);
-            setIsConnected(true);
-        });
-        newSocket.on('disconnect', () => {
-            console.log('socket disconnected');
-            setIsConnected(false);
-        });
-        newSocket.on('connect error', (err) => {
-            console.log('connection failed', err.message);
-        });
-        setSocket(newSocket);
+    newSocket.on('connect', () => {
+      console.log('✅ Socket connected:', newSocket.id);
+      setIsConnected(true);
+    });
 
-        //cleanup: disconnect when component unmounts
-        return () => newSocket.disconnect();
+    newSocket.on('disconnect', (reason) => {
+      console.log('❌ Socket disconnected:', reason);
+      setIsConnected(false);
+    });
 
-    }, []);
-    return (
-        <SocketContext.Provider value = {{ socket, isConnected}}>
-            {children}
-        </SocketContext.Provider>
-    );
+    newSocket.on('connect_error', (err) => {
+      console.error('🔴 Connection error:', err.message);
+      setIsConnected(false);
+    });
+
+    setSocket(newSocket);
+    return newSocket;
+  };
+
+  useEffect(() => {
+    const s = connectSocket();
+    // Cleanup on unmount
+    return () => { if (s) s.disconnect(); };
+  }, []);
+
+  // Expose connectSocket so Login page can call it after saving token
+  return (
+    <SocketContext.Provider value={{ socket, isConnected, connectSocket }}>
+      {children}
+    </SocketContext.Provider>
+  );
 };
 
-//custom hook so any component can access the socket in one line
 export const useSocket = () => useContext(SocketContext);

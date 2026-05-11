@@ -1,6 +1,7 @@
 import {useState} from 'react';
 import {useNavigate} from 'react-router-dom';
 import api from '../api/axios';
+import { useSocket } from '../context/SocketContext'; 
 
 export default function Register(){
     const [form, setForm] = useState({username:'', email:'', password:''});
@@ -15,6 +16,8 @@ export default function Register(){
         //save the token in localstorage
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+
+        connectSocket();
 
         navigate('/chat');
         } catch (err){

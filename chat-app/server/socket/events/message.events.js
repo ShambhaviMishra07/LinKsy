@@ -1,10 +1,22 @@
-const Message = require('../../modles/Message');
+const Message = require('../../models/Message');
 
 module.exports = (io, socket) => {
     //client emits this when user hits send
-    socket.on('send message', async (data) =>{
+    socket.on('send_message', async (data) =>{
         //data = {roomId , content} sent form the frontend
 
+         console.log(`📨 Message received from ${socket.user.username}:`, data);
+
+
+
+
+         console.log('📡 Broadcasting to room:', data.roomId);
+
+
+
+
+
+         
         try{
             //1. save the message permanently to mongoDB
             //even if someone is offline, they'll see it when they come back
@@ -29,7 +41,7 @@ module.exports = (io, socket) => {
                 content: message.content,
                 sender: message.sender,
                 room: data.roomId,
-                createAt: message.createdAt
+                createdAt: message.createdAt
             });
         } catch (err){
             //if something fails tell only the sender

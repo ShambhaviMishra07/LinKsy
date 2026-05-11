@@ -1,50 +1,62 @@
+// client/src/pages/Login.jsx
+
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
+import { useSocket } from '../context/SocketContext'; // ← add this
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { connectSocket } = useSocket(); // ← add this
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const { data } = await api.post('/auth/login', form);
 
-      // Save token + user
+      // 1. Save token first
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      navigate('/chat'); // redirect after login
+      // 2. NOW connect the socket with the fresh token
+      connectSocket(); // ← add this
+
+      // 3. Navigate to chat
+      navigate('/chat');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
     }
   };
 
   return (
-    <div style={{ maxWidth: 400, margin: '80px auto', padding: 24 }}>
-      <h2>Login</h2>
-
+    <div style={{ maxWidth: 400, margin: '80px auto', padding: 24, fontFamily: 'sans-serif' }}>
+      <h2>Login to LinKsy</h2>
       {error && <p style={{ color: 'red' }}>{error}</p>}
-
-      <form onSubmit={handleSubmit}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <input
           placeholder="Email"
           type="email"
           value={form.email}
           onChange={e => setForm({ ...form, email: e.target.value })}
+          style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc' }}
         />
-
         <input
           placeholder="Password"
           type="password"
           value={form.password}
           onChange={e => setForm({ ...form, password: e.target.value })}
+          style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc' }}
         />
-
-        <button type="submit">Login</button>
-      </form>
+        <button
+          onClick={handleSubmit}
+          style={{ padding: 10, background: '#1D9E75', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+        >
+          Login
+        </button>
+        <p>Don't have an account? <Link to="/register">Register</Link></p>
+      </div>
     </div>
   );
 }
