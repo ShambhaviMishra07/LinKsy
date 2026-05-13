@@ -1,6 +1,6 @@
 // client/src/context/SocketContext.jsx
 
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 
 const SocketContext = createContext(null);
@@ -8,21 +8,27 @@ const SocketContext = createContext(null);
 export const SocketProvider = ({ children }) => {
   const [socket, setSocket] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
+  const socketRef = useRef(null); // ref to track the actual socket instance
 
   const connectSocket = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    // If a socket already exists, disconnect it first
-    // This prevents double connections
-    setSocket(prev => {
-      if (prev) prev.disconnect();
-      return null;
-    });
+    // ← KEY FIX: if socket already exists and is connected, don't create a new one
+    if (socketRef.current?.connected) {
+      console.log('⚡ Socket already connected, skipping reconnect');
+      return;
+    }
+
+    // Clean up old socket if it exists but isn't connected
+    if (socketRef.current) {
+      socketRef.current.disconnect();
+    }
+
+    console.log('🔄 Creating new socket connection...');
 
     const newSocket = io('http://localhost:5000', {
       auth: { token },
-      // These options make reconnection more reliable
       reconnection: true,
       reconnectionAttempts: 5,
       reconnectionDelay: 1000,
@@ -43,17 +49,19 @@ export const SocketProvider = ({ children }) => {
       setIsConnected(false);
     });
 
-    setSocket(newSocket);
-    return newSocket;
+    socketRef.current = newSocket; // store in ref
+    setSocket(newSocket);          // also store in state for components to use
   };
 
   useEffect(() => {
-    const s = connectSocket();
-    // Cleanup on unmount
-    return () => { if (s) s.disconnect(); };
+    connectSocket();
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+      }
+    };
   }, []);
 
-  // Expose connectSocket so Login page can call it after saving token
   return (
     <SocketContext.Provider value={{ socket, isConnected, connectSocket }}>
       {children}

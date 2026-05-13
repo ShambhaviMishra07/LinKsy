@@ -1,54 +1,65 @@
-import {useState} from 'react';
-import {useNavigate} from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
-import { useSocket } from '../context/SocketContext'; 
+import { useSocket } from '../context/SocketContext';
 
-export default function Register(){
-    const [form, setForm] = useState({username:'', email:'', password:''});
-    const [error, setError] = useState('');
-    const navigate = useNavigate();
+export default function Register() {
+  const [form, setForm] = useState({ username: '', email: '', password: '' });
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { connectSocket } = useSocket(); // ← was missing this line
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        try{
-            const {data} = await api.post('/auth/register', form);
-        
-        //save the token in localstorage
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      const { data } = await api.post('/auth/register', form);
 
-        connectSocket();
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
 
-        navigate('/chat');
-        } catch (err){
-            setError(err.resopnse?.data?.message || 'something went wrong');
-        }
-    };
+      setTimeout(() => connectSocket(), 100); // ← small delay, same as login
 
-     return (
-    <div style={{ maxWidth: 400, margin: '80px auto', padding: 24 }}>
+      navigate('/chat');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Something went wrong');
+      //          ↑ was "err.resopnse" — typo fixed
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: 400, margin: '80px auto', padding: 24, fontFamily: 'sans-serif' }}>
       <h2>Create account</h2>
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      <form onSubmit={handleSubmit}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <input
           placeholder="Username"
           value={form.username}
           onChange={e => setForm({ ...form, username: e.target.value })}
+          style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc' }}
         />
         <input
           placeholder="Email"
           type="email"
           value={form.email}
           onChange={e => setForm({ ...form, email: e.target.value })}
+          style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc' }}
         />
         <input
           placeholder="Password"
           type="password"
           value={form.password}
           onChange={e => setForm({ ...form, password: e.target.value })}
+          style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc' }}
         />
-        <button type="submit">Register</button>
-      </form>
+        <button
+          type="submit"
+          onClick={handleSubmit}
+          style={{ padding: 10, background: '#1D9E75', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
+        >
+          Register
+        </button>
+        <p>Already have an account? <Link to="/login">Login</Link></p>
+      </div>
     </div>
   );
 }

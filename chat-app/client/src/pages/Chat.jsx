@@ -27,43 +27,61 @@ export default function Chat() {
   }, [socket, isConnected]);
 
   // ── EFFECT 2: Register listeners — only once when socket exists ──
-  useEffect(() => {
-    if (!socket) return;
+ 
+useEffect(() => {
+  if (!socket) return;
 
-    // Define handlers as named functions so we can remove the exact same reference
-    const onMessage = (message) => {
-      console.log('📩 Message arrived:', message);
-      // Using functional update guarantees we always have latest state
-      setMessages(prev => [...prev, message]);
-    };
+  // Define handlers as named functions so we can remove the exact same reference
+  const onMessage = (message) => {
+    console.log('📩 Message arrived:', message);
 
-    const onUserJoined = ({ message }) => {
-      setMessages(prev => [
-        ...prev,
-        { _id: `system-${Date.now()}`, system: true, content: message }
-      ]);
-    };
+    // Using functional update guarantees we always have latest state
+    setMessages(prev => [...prev, message]);
+  };
 
-    const onTyping = ({ username }) => setTypingUser(`${username} is typing...`);
-    const onStopTyping = () => setTypingUser('');
+  const onUserJoined = ({ message }) => {
+    setMessages(prev => [
+      ...prev,
+      { _id: `system-${Date.now()}`, system: true, content: message }
+    ]);
+  };
 
-    // Register listeners
-    socket.on('receive_message', onMessage);
-    socket.on('user_joined', onUserJoined);
-    socket.on('user_typing', onTyping);
-    socket.on('user_stopped_typing', onStopTyping);
+  const onTyping = ({ username }) =>
+    setTypingUser(`${username} is typing...`);
 
-    console.log('👂 Listeners registered');
+  const onStopTyping = () => setTypingUser('');
 
-    // Cleanup: remove exact listener references — prevents duplicates
-    return () => {
-      socket.off('receive_message', onMessage);
-      socket.off('user_joined', onUserJoined);
-      socket.off('user_typing', onTyping);
-      socket.off('user_stopped_typing', onStopTyping);
-      console.log('🧹 Listeners cleaned up');
-    };
-  }, [socket]); // only socket — NOT isConnected, so listeners don't re-register
+  // ✅ Add error handler here
+  const onError = (err) => {
+    console.error('🔴 Socket error from server:', err);
+  };
+
+  // Register listeners
+  socket.on('receive_message', onMessage);
+  socket.on('user_joined', onUserJoined);
+  socket.on('user_typing', onTyping);
+  socket.on('user_stopped_typing', onStopTyping);
+
+  // ✅ Register error listener
+  socket.on('error', onError);
+
+  console.log('👂 Listeners registered');
+
+  // Cleanup: remove exact listener references — prevents duplicates
+  return () => {
+    socket.off('receive_message', onMessage);
+    socket.off('user_joined', onUserJoined);
+    socket.off('user_typing', onTyping);
+    socket.off('user_stopped_typing', onStopTyping);
+
+    // ✅ Cleanup error listener
+    socket.off('error', onError);
+
+    console.log('🧹 Listeners cleaned up');
+  };
+}, [socket]);
+   
+  // only socket — NOT isConnected, so listeners don't re-register
 
   // ── EFFECT 3: Auto scroll ──
   useEffect(() => {

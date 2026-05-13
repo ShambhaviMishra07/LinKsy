@@ -43,8 +43,10 @@ module.exports = (io, socket) => {
                 room: data.roomId,
                 createdAt: message.createdAt
             });
+             console.log('✅ Message broadcasted successfully');
         } catch (err){
             //if something fails tell only the sender
+             console.error('❌ FULL ERROR:', err);
             socket.emit('error', {message :'failed to send message'});
         }
     });

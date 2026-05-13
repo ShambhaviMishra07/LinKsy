@@ -1,29 +1,24 @@
-// client/src/pages/Login.jsx
-
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
-import { useSocket } from '../context/SocketContext'; // ← add this
+import { useSocket } from '../context/SocketContext';
 
 export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { connectSocket } = useSocket(); // ← add this
+  const { connectSocket } = useSocket();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       const { data } = await api.post('/auth/login', form);
 
-      // 1. Save token first
       localStorage.setItem('token', data.token);
       localStorage.setItem('user', JSON.stringify(data.user));
 
-      // 2. NOW connect the socket with the fresh token
-      connectSocket(); // ← add this
+      setTimeout(() => connectSocket(), 100); // ← delay ensures token is saved first
 
-      // 3. Navigate to chat
       navigate('/chat');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
