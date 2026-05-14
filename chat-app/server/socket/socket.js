@@ -1,5 +1,7 @@
 const {Server} = require('socket.io');
+const {createAdapter} = require('@socket.io/redis-adapter');
 const jwt = require('jsonwebtoken');
+const redis = require('../config/redis');
 
 //This function receives the httpServer we created in server.js
  //and attaches socket.io to it
@@ -10,6 +12,17 @@ const jwt = require('jsonwebtoken');
             credentials: true
         }
     });
+
+    //Redis needs TWO separate connections
+    //one for publishing events, one for subscribing to them
+    //this is a redis protocol requirement 
+    const pubClient = redis;
+    const subClient = redis.duplicate();//second independent connection
+
+    //attach adapter - now if you run 2 servers ,all socket events
+    //are synced through redis automatically
+    io.adapter(createAdapter(pubClient, subClient));
+
 
     //------AUTH MIDDLEWARE FOR SOCKETS
     //this runs before any socket connection is accepted
@@ -44,16 +57,46 @@ const jwt = require('jsonwebtoken');
     io.on('connection', (socket) => {
         console.log(`User connected: ${socket.user.username} | socket ID: ${socket.id}`);
 
+     //------MARK USER ONLINE IN REDIS-----------------
+     //SET key value ex seconds
+     //EX 60 = this key auto deletes after 60 seconds
+     //we refresh it evey 30s via heartbeat to keep it alive
+     //if socket dies without sending disconnect, key expires on its own
+     await redis.set(
+        `user:online:${socket.user.userId}`,
+        '1',
+        'EX', 60
+     );
+
+     //tell all connected clients this user is online now
+     io.emit('user_online', {userId: socket.user.userId});
+
         //load message and room events user who successfully connects
         require('./events/message.events')(io, socket);
         require('./events/room.events')(io, socket);
 
+        //--------------HEARTBEAT----------------------
+        //every 30s, reset the time to live back to 60s
+        //this keeps the key alive as long as the socket is connected
+        //setInterval return an ID so we can cancel it on disconnect
+        const heartbeat = setInterval(async () => {
+            await redis.expire(`user: online:${socket.user.userId}`,60);
+        }, 30000);
+
         //-------------DISCONNECT--------------------
-        socket.on('disconnect' , () =>{
-            console.log(`user disconnected: ${socket.user.username}`);
-        });
+       socket.on('disconnect',async () => {
+        clearInterval(heartbeat); //stop the heartbeat
+
+        //delete the online key immediately 
+        await redis.del(`user:online.${socket.user.userId}`);
+
+        //tell everyone this user went offline
+        io.emit('user_offline', {userId: socket.user.userId });
+
+        console.log(`❌ User disconnected: ${socket.user.username}`);
+       });
     });
     return io;
- };
+};
 
  module.exports = initSocket;

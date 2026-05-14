@@ -24,6 +24,8 @@ app.use(express.json());
 // Routes (we'll add these next)
 app.use('/api/auth', require('./routes/auth.routes'));
 
+app.use('/api/messages', require('./routes/message.routes'));
+
 console.log("MONGO_URI:", process.env.MONGO_URI);
 
 app.get('/', (req, res) => {

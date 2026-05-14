@@ -1,4 +1,6 @@
 const Message = require('../../models/Message');
+const redis = require('../../config/redis');
+const { cache } = require('react');
 
 module.exports = (io, socket) => {
     //client emits this when user hits send
@@ -7,13 +9,7 @@ module.exports = (io, socket) => {
 
          console.log(`📨 Message received from ${socket.user.username}:`, data);
 
-
-
-
          console.log('📡 Broadcasting to room:', data.roomId);
-
-
-
 
 
          
@@ -43,15 +39,41 @@ module.exports = (io, socket) => {
                 room: data.roomId,
                 createdAt: message.createdAt
             });
-             console.log('✅ Message broadcasted successfully');
+
+            //------CACHE MESSAGE IN REDIS-----------------
+            //LPUSH = push to the left (front) of a list
+            //we use list so wa can store multiple message per room
+            //key pattern: "room:message:general", "room:message:random" etc
+
+            const cacheKey = `room:message:${data.roomId}`;
+            await redis.lpush(cacheKey, JSON.stringify(messageObj));
+
+            //LTRIM = keep only items from index 0 to 49
+            //this limits our cache to 50 messages per room
+            //older messages beyond index 49 are automatically deleted
+            await.redis.ltrim(cache,0 , 49);
+
+            //set expiry -if nobody chats for 24 hours, cache clears itself
+            await redis.expire(cacheKey, 86400);
+
+            //broadcast to everyone in the room
+            io.to(data.roomId).emit('receive_message', messageObj);
+             console.log('✅ Message sent and cached');
+
         } catch (err){
             //if something fails tell only the sender
-             console.error('❌ FULL ERROR:', err);
+             console.error('❌ FULL ERROR:', err.message);
             socket.emit('error', {message :'failed to send message'});
         }
     });
-     // Typing indicator — lightweight, no DB save needed
-  socket.on('typing_start', (roomId) => {
+     // Typing indicator — stored in redis with 3s auto-expiry
+     //if the browser crashes mid-typing, redis clears it automatically
+  socket.on('typing_start',async (roomId) => {
+    await redis.set(
+      `typing:${roomId}:${socket.user.userId}`,
+      socket.user.username,
+      'EX', 3  //auto deletes after 3 seconds
+    )
     // Tell everyone else in the room that this user is typing
     socket.to(roomId).emit('user_typing', {
       userId: socket.user.userId,
@@ -59,7 +81,9 @@ module.exports = (io, socket) => {
     });
   });
 
-  socket.on('typing_stop', (roomId) => {
+  socket.on('typing_stop',async (roomId) => {
+    await redis.del(`typing:${roomId}:${socket.user.userId}`);
+    
     socket.to(roomId).emit('user_stopped_typing', {
       userId: socket.user.userId
     });
