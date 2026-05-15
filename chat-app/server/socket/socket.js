@@ -54,7 +54,7 @@ const redis = require('../config/redis');
     
     //------------CONNECTION EVENT-----------------
     //this fires once for every user who successfully connects
-    io.on('connection', (socket) => {
+    io.on('connection',async (socket) => {
         console.log(`User connected: ${socket.user.username} | socket ID: ${socket.id}`);
 
      //------MARK USER ONLINE IN REDIS-----------------
