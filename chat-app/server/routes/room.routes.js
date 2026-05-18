@@ -70,5 +70,27 @@ router.post('/dm/:targetUserId', auth, async (req, res) => {
 
         //look for an existing private room with exactly these two members
         //$all means the members array must contain ALL these values
+        const existingDM = await Room.findOne({
+            isPrivate: true,
+            members: {$all: [myId, theirId], $size: 2}
+            // $size :2 ensures there are exactly 2 members -not more
+        
+        });
+
+        if(existingDM) {
+            return res.json(existingDM);  //already have a dm, return it
+        }
+        //create a new DM room
+        const dm = await Room.create({
+            name: `dm-${myId}-${theirId}`,
+            isPrivate: true,
+            createdBy: myId,
+            members: [myId, theirId]
+        });
+        res.status(201).json(dm);
+    } catch (err){
+        res.status(500).json({ message: err.message});
     }
-})
+});
+
+module.exports = router;
