@@ -37,4 +37,25 @@ router.get('/:roomId', auth, async (req, res) => {
   }
 });
 
+//POST /api/message/:roomId/seen - mark all messages as read
+// called when a user opens a room and reads the messages
+router.post('/:roomId/seen', auth, async (req, res) => {
+  try{
+    //update all messages in this room that:
+    //1. were not sent by the current user (no point marking own messages)
+    //2. don't already have current user in seenBy
+    await Message.updateMany({
+      room: req.params.roomId,
+      sender: { $ne : req.user.userId},  //$ne = not equal
+      seenBy: {$nin: [req.user.userId ]}  //$nin = not in array
+  }, 
+  {
+    $addToSet:{ seenBy: req.user.userId} // add to seenby array
+  }
+);
+res.json({ message : 'Marked as seen'});
+} catch (err) {
+  res.status(500).json({message: err.message});
+}
+});
 module.exports = router;

@@ -15,5 +15,14 @@ router.post('/', auth, upload.single('image'), (req, res) => {
 
         //req.file.path = the cloudinary URL of the uploaded image
         //this is what we store as the message content
+        res.json({
+            url : req.file.path,
+            publicId: req.file.filename //used if you want to delete it later
+
+        });
+    } catch (err) {
+        res.status(500).json({ message : err.message});
     }
 })
+
+module.exports = router;
