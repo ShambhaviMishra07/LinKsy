@@ -45,7 +45,8 @@ export default function Login() {
           style={{ padding: 10, borderRadius: 6, border: '1px solid #ccc' }}
         />
         <button
-          onClick={handleSubmit}
+         onClick={handleSubmit}
+         disabled={!form.email || !form.password}
           style={{ padding: 10, background: '#1D9E75', color: 'white', border: 'none', borderRadius: 6, cursor: 'pointer' }}
         >
           Login

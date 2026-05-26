@@ -24,5 +24,11 @@ app.use('/api/rooms',    require('./routes/room.routes'));
 app.use('/api/messages', require('./routes/message.routes'));
 app.use('/api/upload',   require('./routes/upload.routes'));
 
+
+// Health check route
+app.get('/', (req, res) => {
+  res.send('LinKsy API is running...');
+});
+
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
