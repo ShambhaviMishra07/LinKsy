@@ -1,6 +1,6 @@
 // server/server.js
 
-require('dotenv').config(); // must be first line
+require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
@@ -13,22 +13,33 @@ connectDB();
 const app = express();
 const httpServer = http.createServer(app);
 
-initSocket(httpServer);
+// Allow both local dev and production frontend
+const allowedOrigins = [
+  'http://localhost:5173',
+  process.env.CLIENT_URL  // your Vercel URL goes here after deploying frontend
+];
 
-app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (mobile apps, Postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true
+}));
+
 app.use(express.json());
 
-// Routes
+initSocket(httpServer);
+
 app.use('/api/auth',     require('./routes/auth.routes'));
 app.use('/api/rooms',    require('./routes/room.routes'));
 app.use('/api/messages', require('./routes/message.routes'));
 app.use('/api/upload',   require('./routes/upload.routes'));
 
-
-// Health check route
-app.get('/', (req, res) => {
-  res.send('LinKsy API is running...');
-});
+// Health check route — Railway uses this to verify your server is alive
+app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

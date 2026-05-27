@@ -8,7 +8,16 @@ const redis = require('../config/redis');
  const initSocket = (httpServer) => {
     const io = new Server(httpServer, {
         cors: {
-            origin: 'http://localhost:5173',
+            origin: (origin, callback) =>{
+                const allowedOrigins = [
+                    'http://localhost:5173',
+                    process.env.CLIENT_URL
+                ];
+                if(!origin || allowedOrigins.includes(origin)){
+                    return callback(null, true);
+                }
+                callback(new Error('Not allowed by CORS'));
+            },
             credentials: true
         }
     });
