@@ -327,10 +327,5 @@ VITE_API_URL, VITE_SOCKET_URL
 Shambhavi Mishra
 
 ---
-
-## License
-
-MIT License — feel free to use this project as a reference or starting point.
-
----
+##END
 
