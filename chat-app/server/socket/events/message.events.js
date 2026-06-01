@@ -3,6 +3,12 @@
 const Message = require('../../models/Message');
 const redis = require('../../config/redis');
 
+// Change #1: Import Room model once at the top
+const Room = require('../../models/Room');
+
+// Change #2: Store cache expiry in a constant
+const CACHE_EXPIRY = 86400; // 24 hours
+
 module.exports = (io, socket) => {
 
   socket.on('send_message', async (data) => {
@@ -37,10 +43,10 @@ module.exports = (io, socket) => {
 
       await redis.lpush(cacheKey, JSON.stringify(messageObj));
       await redis.ltrim(cacheKey, 0, 49);
-      await redis.expire(cacheKey, 86400);
+      await redis.expire(cacheKey, CACHE_EXPIRY);
 
       // 4. Update room last message
-      await require('../../models/Room').findByIdAndUpdate(data.roomId, {
+      await Room.findByIdAndUpdate(data.roomId, {
         lastMessage: {
           content: data.type === 'image'
             ? '📷 Image'
