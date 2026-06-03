@@ -2,7 +2,15 @@
 
 ## Summary
 
-LinKsy is a production-grade real-time chat application where messages deliver instantly without page refresh. Users can register, create public chat rooms or private DMs, share images, and see live typing indicators and read receipts. Built on Node.js, React, Socket.io, MongoDB, and Redis — it implements JWT authentication for both REST APIs and WebSocket handshakes, Redis caching for sub-millisecond message loads, and Cloudinary for image storage. Deployed with Railway (backend), Upstash (Redis), and Vercel (frontend), LinKsy demonstrates the architecture patterns used in production messaging systems.
+* Developed a production-grade real-time chat application using **React, Node.js, Express, MongoDB, Socket.io, Redis, and Cloudinary**.
+* Implemented **instant messaging** using WebSockets, enabling users to send and receive messages without page refresh.
+* Built features such as **public chat rooms, private direct messaging, image sharing, typing indicators, and read receipts**.
+* Secured the application with **JWT-based authentication** for both REST APIs and WebSocket connections.
+* Integrated **Redis caching** to improve message retrieval speed and enhance overall application performance.
+* Used **Cloudinary** for efficient image upload and storage management.
+* Deployed the application using **Vercel (frontend), Railway (backend), and Upstash Redis**, following a production-style architecture.
+* Designed the system to demonstrate scalable real-time communication patterns used in modern messaging platforms.
+
 
 ---
 
