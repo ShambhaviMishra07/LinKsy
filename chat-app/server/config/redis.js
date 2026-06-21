@@ -1,12 +1,15 @@
-// server/config/redis.js
+// server/config/redis.js — add error handling that doesn't crash the app
 
 const Redis = require('ioredis');
 
-// In production, Redis URL is a single connection string
-// In development, we use host/port separately
 const redis = process.env.REDIS_URL
   ? new Redis(process.env.REDIS_URL, {
-      tls: { rejectUnauthorized: false } // required for Upstash TLS connection
+      tls: { rejectUnauthorized: false },
+      maxRetriesPerRequest: 3,
+      retryStrategy(times) {
+        if (times > 5) return null; // stop retrying after 5 attempts
+        return Math.min(times * 200, 2000);
+      }
     })
   : new Redis({
       host: process.env.REDIS_HOST || '127.0.0.1',
