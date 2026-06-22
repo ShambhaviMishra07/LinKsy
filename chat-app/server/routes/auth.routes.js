@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
+const auth = require('../middleware/auth.middleware');
 //REGISTER
 router.post('/register', async (req, res) =>{
     try{
@@ -81,5 +82,30 @@ res.json({
         res.status(500).json({message: 'server error', error: err.message});
     }
 });
+
+
+
+// ===== TEMP FEATURE: ROOM INVITE SYSTEM =====
+router.get('/find/:username', auth, async (req, res) => {
+    try {
+        const user = await User.findOne({
+            username: req.params.username
+        }).select('_id username');
+
+        if (!user) {
+            return res.status(404).json({
+                message: 'User not found'
+            });
+        }
+
+        res.json(user);
+
+    } catch (err) {
+        res.status(500).json({
+            message: err.message
+        });
+    }
+});
+// ===== END TEMP FEATURE =====
 
 module.exports = router;

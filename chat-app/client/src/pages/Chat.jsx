@@ -15,6 +15,15 @@ export default function Chat() {
   const [newRoomName, setNewRoomName] = useState('');
   const [showCreateRoom, setShowCreateRoom] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+
+// ===== TEMP FEATURE: ROOM INVITE SYSTEM — DELETE THESE STATE LINES LATER =====
+const [pendingInvites, setPendingInvites] = useState([]);
+const [showInviteBox, setShowInviteBox] = useState(false);
+const [inviteUsername, setInviteUsername] = useState('');
+// ===== END TEMP FEATURE =====
+
+
   const typingTimeout = useRef(null);
   const bottomRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -38,6 +47,79 @@ export default function Chat() {
     };
     loadRooms();
   }, []);
+
+
+
+
+  // ===== TEMP FEATURE: ROOM INVITE SYSTEM — DELETE THIS EFFECT LATER =====
+useEffect(() => {
+  const loadInvites = async () => {
+    try {
+      const { data } = await api.get('/invites/pending');
+      setPendingInvites(data);
+    } catch (err) {
+      console.error('Failed to load invites:', err.message);
+    }
+  };
+
+  loadInvites();
+}, []);
+// ===== END TEMP FEATURE =====
+
+
+// ===== TEMP FEATURE: ROOM INVITE SYSTEM — DELETE THESE FUNCTIONS LATER =====
+
+// Sends an invite — needs the target user's MongoDB _id
+// For simplicity, you manually paste the userId for now (no search UI yet)
+const sendInvite = async () => {
+  if (!activeRoom || !inviteUsername.trim()) return;
+  try {
+    // NOTE: this is simplified — looks up user by username first
+    const { data: userData } = await api.get(`/auth/find/${inviteUsername}`);
+    await api.post(`/invites/${activeRoom._id}/${userData._id}`);
+    alert(`Invite sent to ${inviteUsername}`);
+    setInviteUsername('');
+    setShowInviteBox(false);
+  } catch (err) {
+    alert(err.response?.data?.message || 'Failed to send invite');
+  }
+};
+
+const acceptInvite = async (inviteId) => {
+  try {
+    const { data } = await api.post(`/invites/${inviteId}/accept`);
+
+    // Remove from pending list
+    setPendingInvites(prev =>
+      prev.filter(inv => inv._id !== inviteId)
+    );
+
+    // Reload rooms
+    const { data: roomsData } = await api.get('/rooms');
+    setRooms(roomsData);
+
+    alert('Joined the room!');
+  } catch (err) {
+    console.log('ERROR:', err);
+    console.log('RESPONSE:', err.response?.data);
+
+    alert(err.response?.data?.message || err.message);
+  }
+};
+
+const rejectInvite = async (inviteId) => {
+  try {
+    await api.post(`/invites/${inviteId}/reject`);
+    setPendingInvites(prev => prev.filter(inv => inv._id !== inviteId));
+  } catch (err) {
+    alert('Failed to reject invite');
+  }
+};
+// ===== END TEMP FEATURE =====
+
+
+
+
 
   // ── Open a room ───────────────────────────────────────────────
   const openRoom = async (room) => {
@@ -293,17 +375,164 @@ export default function Chat() {
 
         {activeRoom ? (
           <>
-            {/* Chat header */}
-            <div style={{ padding: '14px 20px', background: 'white', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: 16 }}>
-                  {activeRoom.isPrivate ? '🔒' : '#'} {activeRoom.name}
-                </div>
-                {activeRoom.description && (
-                  <div style={{ fontSize: 12, color: '#888' }}>{activeRoom.description}</div>
-                )}
-              </div>
-            </div>
+          {/* Chat header */}
+<div
+  style={{
+    padding: '14px 20px',
+    background: 'white',
+    borderBottom: '1px solid #eee',
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10
+  }}
+>
+  <div>
+    <div style={{ fontWeight: 600, fontSize: 16 }}>
+      {activeRoom.isPrivate ? '🔒' : '#'} {activeRoom.name}
+    </div>
+
+    {activeRoom.description && (
+      <div style={{ fontSize: 12, color: '#888' }}>
+        {activeRoom.description}
+      </div>
+    )}
+  </div>
+
+  {/* ===== TEMP FEATURE: ROOM INVITE SYSTEM — DELETE THIS BLOCK LATER ===== */}
+  {activeRoom && !activeRoom.isPrivate && (
+    <div
+      style={{
+        marginLeft: 'auto',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8
+      }}
+    >
+      <button
+        onClick={() => setShowInviteBox(!showInviteBox)}
+        style={{
+          fontSize: 12,
+          padding: '5px 10px',
+          borderRadius: 6,
+          border: '1px solid #ddd',
+          background: 'white',
+          cursor: 'pointer'
+        }}
+      >
+        + Invite
+      </button>
+    </div>
+  )}
+  {/* ===== END TEMP FEATURE ===== */}
+</div>
+
+
+
+
+
+{/* ===== TEMP FEATURE: ROOM INVITE SYSTEM — DELETE THIS BLOCK LATER ===== */}
+{showInviteBox && (
+  <div
+    style={{
+      padding: '10px 20px',
+      background: '#fff9f0',
+      borderBottom: '1px solid #eee',
+      display: 'flex',
+      gap: 8
+    }}
+  >
+    <input
+      value={inviteUsername}
+      onChange={e => setInviteUsername(e.target.value)}
+      placeholder="Enter username to invite..."
+      style={{
+        flex: 1,
+        padding: '6px 10px',
+        borderRadius: 6,
+        border: '1px solid #ddd',
+        fontSize: 13
+      }}
+    />
+    <button
+      onClick={sendInvite}
+      style={{
+        padding: '6px 14px',
+        borderRadius: 6,
+        border: 'none',
+        background: '#1D9E75',
+        color: 'white',
+        cursor: 'pointer',
+        fontSize: 13
+      }}
+    >
+      Send Invite
+    </button>
+  </div>
+)}
+
+{pendingInvites.length > 0 && (
+  <div
+    style={{
+      padding: '10px 20px',
+      background: '#fff3cd',
+      borderBottom: '1px solid #eee'
+    }}
+  >
+    {pendingInvites.map(invite => (
+      <div
+        key={invite._id}
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '6px 0'
+        }}
+      >
+        <span style={{ fontSize: 13 }}>
+          <strong>{invite.invitedBy?.username}</strong> invited you to{' '}
+          <strong>{invite.room?.name}</strong>
+        </span>
+
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            onClick={() => acceptInvite(invite._id)}
+            style={{
+              fontSize: 12,
+              padding: '4px 10px',
+              borderRadius: 4,
+              border: 'none',
+              background: '#1D9E75',
+              color: 'white',
+              cursor: 'pointer'
+            }}
+          >
+            Accept
+          </button>
+
+          <button
+            onClick={() => rejectInvite(invite._id)}
+            style={{
+              fontSize: 12,
+              padding: '4px 10px',
+              borderRadius: 4,
+              border: 'none',
+              background: '#ccc',
+              color: '#333',
+              cursor: 'pointer'
+            }}
+          >
+            Reject
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+{/* ===== END TEMP FEATURE ===== */}
+
+
+
+
 
             {/* Messages */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', background: '#f5f5f5', display: 'flex', flexDirection: 'column', gap: 8 }}>

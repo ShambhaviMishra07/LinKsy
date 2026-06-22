@@ -10,7 +10,7 @@ router.get('/', auth,async (req, res) => {
         const rooms= await Room.find({ isPrivate : false})
         .populate('createdBy', 'username')
         .populate('members', 'username')
-        .sort({ updateAt: -1});  //most recently active first
+        .sort({ updatedAt: -1 });  //most recently active first
 
         res.json(rooms);
     } catch (err) {
@@ -43,7 +43,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 //------------------JOIN A ROOM-----------------------
-router.post('/roomId/join', auth, async (req, res) => {
+router.post('/:roomId/join', auth, async (req, res) => {
     try{
         const room = await Room.findById(req.params.roomId);
         if(!room) return res.status(404).json({ message: 'Room not found'});

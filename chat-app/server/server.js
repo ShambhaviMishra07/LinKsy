@@ -38,8 +38,15 @@ app.use('/api/rooms',    require('./routes/room.routes'));
 app.use('/api/messages', require('./routes/message.routes'));
 app.use('/api/upload',   require('./routes/upload.routes'));
 
+
+// ===== TEMP FEATURE: ROOM INVITE SYSTEM — DELETE THIS LINE LATER =====
+app.use('/api/invites', require('./routes/invite.routes'));
+// ===== END TEMP FEATURE =====
+
+
+
 // Health check route — Railway uses this to verify your server is alive
-app.get('/health', (req, res) => res.json({ status: 'ok' }));
+// app.get('/health', (req, res) => res.json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

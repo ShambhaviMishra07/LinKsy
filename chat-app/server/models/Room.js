@@ -10,10 +10,14 @@ const roomSchema = new mongoose.Schema({
         type: String,
         default:''
     },
-    createdBy: [{
-        type : mongoose.Schema.Types.ObjectId,
-        ref: 'User'
-    }],
+     createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+      members: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
     isPrivate: {
         type: Boolean,
         default: false
