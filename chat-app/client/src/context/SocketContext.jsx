@@ -6,21 +6,19 @@ import { io } from 'socket.io-client';
 const SocketContext = createContext(null);
 
 export const SocketProvider = ({ children }) => {
-  const [socket, setSocket] = useState(null);
+  const [socket, setSocket] = useState(null);       // ← state version, for components to use
   const [isConnected, setIsConnected] = useState(false);
-  const socketRef = useRef(null); // ref to track the actual socket instance
+  const socketRef = useRef(null);                    // ← ref version, for internal logic only (declared ONCE)
 
   const connectSocket = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    // ← KEY FIX: if socket already exists and is connected, don't create a new one
     if (socketRef.current?.connected) {
       console.log('⚡ Socket already connected, skipping reconnect');
       return;
     }
 
-    // Clean up old socket if it exists but isn't connected
     if (socketRef.current) {
       socketRef.current.disconnect();
     }
@@ -49,16 +47,17 @@ export const SocketProvider = ({ children }) => {
       setIsConnected(false);
     });
 
-    socketRef.current = newSocket; // store in ref
-    setSocket(newSocket);          // also store in state for components to use
+    socketRef.current = newSocket;
+    setSocket(newSocket); // ← THIS LINE WAS MISSING/COMMENTED — critical fix
   };
 
   useEffect(() => {
-    connectSocket();
+    if (!socketRef.current) {
+      connectSocket();
+    }
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+      socketRef.current?.disconnect();
+      socketRef.current = null;
     };
   }, []);
 

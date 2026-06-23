@@ -15,159 +15,80 @@ export default function Chat() {
   const [newRoomName, setNewRoomName] = useState('');
   const [showCreateRoom, setShowCreateRoom] = useState(false);
   const [uploading, setUploading] = useState(false);
-
-
-// ===== TEMP FEATURE: ROOM INVITE SYSTEM — DELETE THESE STATE LINES LATER =====
-const [pendingInvites, setPendingInvites] = useState([]);
-const [showInviteBox, setShowInviteBox] = useState(false);
-const [inviteUsername, setInviteUsername] = useState('');
-// ===== END TEMP FEATURE =====
-
-
   const typingTimeout = useRef(null);
   const bottomRef = useRef(null);
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
+  // Keep latest activeRoom available inside socket callbacks
+  // without forcing the listener effect to re-run on every room switch
+  const activeRoomRef = useRef(null);
+  useEffect(() => {
+    activeRoomRef.current = activeRoom;
+  }, [activeRoom]);
+
   // ── Load rooms on mount ───────────────────────────────────────
   useEffect(() => {
     const loadRooms = async () => {
       try {
         const { data } = await api.get('/rooms');
+        console.log('📦 Rooms loaded:', data);
         setRooms(data);
-
-        // Auto-open first room if exists
         if (data.length > 0) {
           openRoom(data[0]);
         }
       } catch (err) {
-        console.error('Failed to load rooms:', err.message);
+        console.error('❌ Failed to load rooms:', err.response?.data || err.message);
       }
     };
     loadRooms();
   }, []);
 
-
-
-
-  // ===== TEMP FEATURE: ROOM INVITE SYSTEM — DELETE THIS EFFECT LATER =====
-useEffect(() => {
-  const loadInvites = async () => {
-    try {
-      const { data } = await api.get('/invites/pending');
-      setPendingInvites(data);
-    } catch (err) {
-      console.error('Failed to load invites:', err.message);
-    }
-  };
-
-  loadInvites();
-}, []);
-// ===== END TEMP FEATURE =====
-
-
-// ===== TEMP FEATURE: ROOM INVITE SYSTEM — DELETE THESE FUNCTIONS LATER =====
-
-// Sends an invite — needs the target user's MongoDB _id
-// For simplicity, you manually paste the userId for now (no search UI yet)
-const sendInvite = async () => {
-  if (!activeRoom || !inviteUsername.trim()) return;
-  try {
-    // NOTE: this is simplified — looks up user by username first
-    const { data: userData } = await api.get(`/auth/find/${inviteUsername}`);
-    await api.post(`/invites/${activeRoom._id}/${userData._id}`);
-    alert(`Invite sent to ${inviteUsername}`);
-    setInviteUsername('');
-    setShowInviteBox(false);
-  } catch (err) {
-    alert(err.response?.data?.message || 'Failed to send invite');
-  }
-};
-
-const acceptInvite = async (inviteId) => {
-  try {
-    const { data } = await api.post(`/invites/${inviteId}/accept`);
-
-    // Remove from pending list
-    setPendingInvites(prev =>
-      prev.filter(inv => inv._id !== inviteId)
-    );
-
-    // Reload rooms
-    const { data: roomsData } = await api.get('/rooms');
-    setRooms(roomsData);
-
-    alert('Joined the room!');
-  } catch (err) {
-    console.log('ERROR:', err);
-    console.log('RESPONSE:', err.response?.data);
-
-    alert(err.response?.data?.message || err.message);
-  }
-};
-
-const rejectInvite = async (inviteId) => {
-  try {
-    await api.post(`/invites/${inviteId}/reject`);
-    setPendingInvites(prev => prev.filter(inv => inv._id !== inviteId));
-  } catch (err) {
-    alert('Failed to reject invite');
-  }
-};
-// ===== END TEMP FEATURE =====
-
-
-
-
-
   // ── Open a room ───────────────────────────────────────────────
   const openRoom = async (room) => {
-    // Leave previous room
-    if (activeRoom && socket) {
-      socket.emit('leave_room', activeRoom._id);
+    if (activeRoomRef.current && socket) {
+      socket.emit('leave_room', activeRoomRef.current._id);
     }
 
     setActiveRoom(room);
     setMessages([]);
 
-    // Join new room
     if (socket && isConnected) {
       socket.emit('join_room', room._id.toString());
       socket.emit('mark_seen', room._id.toString());
     }
 
-    // Load message history
     try {
       const { data } = await api.get(`/messages/${room._id}`);
       setMessages(data.messages || []);
     } catch (err) {
-      console.error('History load failed:', err.message);
+      console.error('❌ History load failed:', err.response?.data || err.message);
     }
   };
 
-  // ── Socket event listeners ────────────────────────────────────
+  // ── Re-join room whenever socket (re)connects ───────────────────
   useEffect(() => {
     if (!socket || !isConnected) return;
-
-    // Re-join active room when socket reconnects
-    if (activeRoom) {
-      socket.emit('join_room', activeRoom._id.toString());
+    if (activeRoomRef.current) {
+      socket.emit('join_room', activeRoomRef.current._id.toString());
     }
   }, [socket, isConnected]);
 
+  // ── Register socket listeners ONCE per socket instance ───────────
   useEffect(() => {
+    console.log('🔍 Listener effect running. Socket is:', socket?.id || socket);
     if (!socket) return;
 
     const onMessage = (message) => {
+      console.log('📩 onMessage FIRED with:', message);
       setMessages(prev => [...prev, message]);
 
-      // Auto-mark as seen if this room is currently open
-      if (activeRoom && message.room === activeRoom._id.toString()) {
-        socket.emit('mark_seen', activeRoom._id.toString());
+      const current = activeRoomRef.current;
+      if (current && message.room === current._id.toString()) {
+        socket.emit('mark_seen', current._id.toString());
       }
 
-      // Update room's last message preview in sidebar
       setRooms(prev => prev.map(r =>
         r._id === message.room
           ? { ...r, lastMessage: { content: message.content, sender: message.sender?.username } }
@@ -175,8 +96,7 @@ const rejectInvite = async (inviteId) => {
       ));
     };
 
-    const onMessagesSeen = ({ seenBy, username }) => {
-      // Update seenBy on messages so the tick updates
+    const onMessagesSeen = ({ seenBy }) => {
       setMessages(prev => prev.map(msg =>
         msg.sender?._id === user.id
           ? { ...msg, seenBy: [...(msg.seenBy || []), seenBy] }
@@ -194,21 +114,27 @@ const rejectInvite = async (inviteId) => {
 
     const onTyping = ({ username }) => setTypingUser(`${username} is typing...`);
     const onStopTyping = () => setTypingUser('');
+    const onError = (err) => console.error('🔴 Socket error from server:', err);
 
     socket.on('receive_message', onMessage);
     socket.on('messages_seen', onMessagesSeen);
     socket.on('user_joined', onUserJoined);
     socket.on('user_typing', onTyping);
     socket.on('user_stopped_typing', onStopTyping);
+    socket.on('error', onError);
+
+    console.log('👂 Listeners registered');
 
     return () => {
+      console.log('🧹 Cleaning up listeners');
       socket.off('receive_message', onMessage);
       socket.off('messages_seen', onMessagesSeen);
       socket.off('user_joined', onUserJoined);
       socket.off('user_typing', onTyping);
       socket.off('user_stopped_typing', onStopTyping);
+      socket.off('error', onError);
     };
-  }, [socket, activeRoom]);
+  }, [socket]);
 
   // ── Auto scroll ───────────────────────────────────────────────
   useEffect(() => {
@@ -218,6 +144,7 @@ const rejectInvite = async (inviteId) => {
   // ── Send text message ─────────────────────────────────────────
   const sendMessage = () => {
     if (!input.trim() || !socket || !activeRoom) return;
+    console.log('📤 Emitting send_message:', { roomId: activeRoom._id, content: input });
     socket.emit('send_message', {
       roomId: activeRoom._id.toString(),
       content: input,
@@ -227,7 +154,6 @@ const rejectInvite = async (inviteId) => {
     setInput('');
   };
 
-  // ── Handle typing ─────────────────────────────────────────────
   const handleTyping = (e) => {
     setInput(e.target.value);
     if (!socket || !activeRoom) return;
@@ -238,38 +164,32 @@ const rejectInvite = async (inviteId) => {
     }, 1500);
   };
 
-  // ── Upload image ──────────────────────────────────────────────
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file || !activeRoom) return;
 
     setUploading(true);
     try {
-      // Create FormData — required for file uploads
-      // This is different from JSON — it's multipart/form-data
       const formData = new FormData();
-      formData.append('image', file); // 'image' matches upload.single('image') on server
+      formData.append('image', file);
 
       const { data } = await api.post('/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      // Send the Cloudinary URL as a message with type 'image'
       socket.emit('send_message', {
         roomId: activeRoom._id.toString(),
-        content: data.url,   // Cloudinary URL
+        content: data.url,
         type: 'image'
       });
-
     } catch (err) {
-      console.error('Upload failed:', err.message);
+      console.error('❌ Upload failed:', err.response?.data || err.message);
     } finally {
       setUploading(false);
-      e.target.value = ''; // reset file input
+      e.target.value = '';
     }
   };
 
-  // ── Create new room ───────────────────────────────────────────
   const createRoom = async () => {
     if (!newRoomName.trim()) return;
     try {
@@ -289,14 +209,11 @@ const rejectInvite = async (inviteId) => {
     navigate('/login');
   };
 
-  // ── Render ────────────────────────────────────────────────────
   return (
     <div style={{ display: 'flex', height: '100vh', fontFamily: 'sans-serif' }}>
 
-      {/* ── SIDEBAR ── */}
+      {/* SIDEBAR */}
       <div style={{ width: 260, background: '#1a1a2e', color: 'white', display: 'flex', flexDirection: 'column' }}>
-
-        {/* App name + status */}
         <div style={{ padding: '16px', borderBottom: '1px solid #2a2a4a' }}>
           <div style={{ fontWeight: 700, fontSize: 18, color: '#5DCAA5' }}>LinKsy</div>
           <div style={{ fontSize: 12, color: isConnected ? '#5DCAA5' : '#ff6b6b', marginTop: 2 }}>
@@ -304,7 +221,6 @@ const rejectInvite = async (inviteId) => {
           </div>
         </div>
 
-        {/* Room list header */}
         <div style={{ padding: '12px 16px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 12, color: '#8888aa', textTransform: 'uppercase', letterSpacing: 1 }}>Rooms</span>
           <button
@@ -313,7 +229,6 @@ const rejectInvite = async (inviteId) => {
           >+</button>
         </div>
 
-        {/* Create room input */}
         {showCreateRoom && (
           <div style={{ padding: '0 12px 10px' }}>
             <input
@@ -326,7 +241,6 @@ const rejectInvite = async (inviteId) => {
           </div>
         )}
 
-        {/* Room list */}
         <div style={{ flex: 1, overflowY: 'auto' }}>
           {rooms.map(room => (
             <div
@@ -350,7 +264,6 @@ const rejectInvite = async (inviteId) => {
               )}
             </div>
           ))}
-
           {rooms.length === 0 && (
             <div style={{ padding: 16, fontSize: 13, color: '#8888aa' }}>
               No rooms yet. Create one with +
@@ -358,183 +271,30 @@ const rejectInvite = async (inviteId) => {
           )}
         </div>
 
-        {/* User info + logout */}
         <div style={{ padding: '12px 16px', borderTop: '1px solid #2a2a4a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 13 }}>👤 {user.username}</span>
           <button
             onClick={logout}
             style={{ background: 'none', border: '1px solid #8888aa', color: '#8888aa', padding: '4px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}
-          >
-            Logout
-          </button>
+          >Logout</button>
         </div>
       </div>
 
-      {/* ── MAIN CHAT AREA ── */}
+      {/* MAIN CHAT AREA */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-
         {activeRoom ? (
           <>
-          {/* Chat header */}
-<div
-  style={{
-    padding: '14px 20px',
-    background: 'white',
-    borderBottom: '1px solid #eee',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10
-  }}
->
-  <div>
-    <div style={{ fontWeight: 600, fontSize: 16 }}>
-      {activeRoom.isPrivate ? '🔒' : '#'} {activeRoom.name}
-    </div>
+            <div style={{ padding: '14px 20px', background: 'white', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 16 }}>
+                  {activeRoom.isPrivate ? '🔒' : '#'} {activeRoom.name}
+                </div>
+                {activeRoom.description && (
+                  <div style={{ fontSize: 12, color: '#888' }}>{activeRoom.description}</div>
+                )}
+              </div>
+            </div>
 
-    {activeRoom.description && (
-      <div style={{ fontSize: 12, color: '#888' }}>
-        {activeRoom.description}
-      </div>
-    )}
-  </div>
-
-  {/* ===== TEMP FEATURE: ROOM INVITE SYSTEM — DELETE THIS BLOCK LATER ===== */}
-  {activeRoom && !activeRoom.isPrivate && (
-    <div
-      style={{
-        marginLeft: 'auto',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8
-      }}
-    >
-      <button
-        onClick={() => setShowInviteBox(!showInviteBox)}
-        style={{
-          fontSize: 12,
-          padding: '5px 10px',
-          borderRadius: 6,
-          border: '1px solid #ddd',
-          background: 'white',
-          cursor: 'pointer'
-        }}
-      >
-        + Invite
-      </button>
-    </div>
-  )}
-  {/* ===== END TEMP FEATURE ===== */}
-</div>
-
-
-
-
-
-{/* ===== TEMP FEATURE: ROOM INVITE SYSTEM — DELETE THIS BLOCK LATER ===== */}
-{showInviteBox && (
-  <div
-    style={{
-      padding: '10px 20px',
-      background: '#fff9f0',
-      borderBottom: '1px solid #eee',
-      display: 'flex',
-      gap: 8
-    }}
-  >
-    <input
-      value={inviteUsername}
-      onChange={e => setInviteUsername(e.target.value)}
-      placeholder="Enter username to invite..."
-      style={{
-        flex: 1,
-        padding: '6px 10px',
-        borderRadius: 6,
-        border: '1px solid #ddd',
-        fontSize: 13
-      }}
-    />
-    <button
-      onClick={sendInvite}
-      style={{
-        padding: '6px 14px',
-        borderRadius: 6,
-        border: 'none',
-        background: '#1D9E75',
-        color: 'white',
-        cursor: 'pointer',
-        fontSize: 13
-      }}
-    >
-      Send Invite
-    </button>
-  </div>
-)}
-
-{pendingInvites.length > 0 && (
-  <div
-    style={{
-      padding: '10px 20px',
-      background: '#fff3cd',
-      borderBottom: '1px solid #eee'
-    }}
-  >
-    {pendingInvites.map(invite => (
-      <div
-        key={invite._id}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '6px 0'
-        }}
-      >
-        <span style={{ fontSize: 13 }}>
-          <strong>{invite.invitedBy?.username}</strong> invited you to{' '}
-          <strong>{invite.room?.name}</strong>
-        </span>
-
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button
-            onClick={() => acceptInvite(invite._id)}
-            style={{
-              fontSize: 12,
-              padding: '4px 10px',
-              borderRadius: 4,
-              border: 'none',
-              background: '#1D9E75',
-              color: 'white',
-              cursor: 'pointer'
-            }}
-          >
-            Accept
-          </button>
-
-          <button
-            onClick={() => rejectInvite(invite._id)}
-            style={{
-              fontSize: 12,
-              padding: '4px 10px',
-              borderRadius: 4,
-              border: 'none',
-              background: '#ccc',
-              color: '#333',
-              cursor: 'pointer'
-            }}
-          >
-            Reject
-          </button>
-        </div>
-      </div>
-    ))}
-  </div>
-)}
-{/* ===== END TEMP FEATURE ===== */}
-
-
-
-
-
-            {/* Messages */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px', background: '#f5f5f5', display: 'flex', flexDirection: 'column', gap: 8 }}>
               {messages.length === 0 && (
                 <p style={{ textAlign: 'center', color: '#aaa', marginTop: 40 }}>No messages yet. Say hello! 👋</p>
@@ -567,29 +327,14 @@ const rejectInvite = async (inviteId) => {
                           {msg.sender?.username}
                         </div>
                       )}
-
-                      {/* Render image or text based on type */}
                       {msg.type === 'image' ? (
-                        <img
-                          src={msg.content}
-                          alt="shared"
-                          style={{ maxWidth: 280, borderRadius: 12, display: 'block' }}
-                        />
+                        <img src={msg.content} alt="shared" style={{ maxWidth: 280, borderRadius: 12, display: 'block' }} />
                       ) : (
                         <div>{msg.content}</div>
                       )}
-
                       <div style={{ fontSize: 10, opacity: 0.7, marginTop: 3, textAlign: 'right', padding: msg.type === 'image' ? '0 6px 4px' : 0 }}>
-                        {msg.createdAt
-                          ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                          : ''}
-                        {/* Read receipt tick — only show on sender's messages */}
-                        {isMe && (
-                          <span style={{ marginLeft: 4 }}>
-                            {isSeen ? '✓✓' : '✓'}
-                            {/* ✓ = sent, ✓✓ = seen by at least one person */}
-                          </span>
-                        )}
+                        {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                        {isMe && <span style={{ marginLeft: 4 }}>{isSeen ? '✓✓' : '✓'}</span>}
                       </div>
                     </div>
                   </div>
@@ -602,30 +347,13 @@ const rejectInvite = async (inviteId) => {
               <div ref={bottomRef} />
             </div>
 
-            {/* Input area */}
             <div style={{ padding: '12px 20px', background: 'white', borderTop: '1px solid #eee', display: 'flex', gap: 10, alignItems: 'center' }}>
-
-              {/* Hidden file input */}
-              <input
-                type="file"
-                accept="image/*"
-                ref={fileInputRef}
-                onChange={handleFileUpload}
-                style={{ display: 'none' }}
-              />
-
-              {/* Image upload button */}
+              <input type="file" accept="image/*" ref={fileInputRef} onChange={handleFileUpload} style={{ display: 'none' }} />
               <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
-                style={{
-                  width: 40, height: 40, borderRadius: '50%', border: '1px solid #ddd',
-                  background: 'white', cursor: 'pointer', fontSize: 18, display: 'flex',
-                  alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                }}
-              >
-                {uploading ? '⏳' : '📷'}
-              </button>
+                style={{ width: 40, height: 40, borderRadius: '50%', border: '1px solid #ddd', background: 'white', cursor: 'pointer', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}
+              >{uploading ? '⏳' : '📷'}</button>
 
               <input
                 value={input}
@@ -637,18 +365,11 @@ const rejectInvite = async (inviteId) => {
               <button
                 onClick={sendMessage}
                 disabled={!input.trim()}
-                style={{
-                  padding: '10px 20px', borderRadius: 24, border: 'none',
-                  background: input.trim() ? '#1D9E75' : '#ccc',
-                  color: 'white', cursor: input.trim() ? 'pointer' : 'default', fontSize: 14, flexShrink: 0
-                }}
-              >
-                Send
-              </button>
+                style={{ padding: '10px 20px', borderRadius: 24, border: 'none', background: input.trim() ? '#1D9E75' : '#ccc', color: 'white', cursor: input.trim() ? 'pointer' : 'default', fontSize: 14, flexShrink: 0 }}
+              >Send</button>
             </div>
           </>
         ) : (
-          // No room selected yet
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#aaa', flexDirection: 'column', gap: 12 }}>
             <div style={{ fontSize: 48 }}>💬</div>
             <div style={{ fontSize: 18 }}>Select a room or create one to start chatting</div>
