@@ -4,9 +4,31 @@ const Message = require('../models/Message');
 const redis = require('../config/redis');
 const auth = require('../middleware/auth.middleware');
 
+// const Room = require('../models/Room');
+
+
 //GET /api/messages/:roomId - load message history for a room
 router.get('/:roomId', auth, async (req, res) => {
     try{
+
+
+
+    //     // ── VERIFY MEMBERSHIP ─────────────────────────────────────
+    // const room = await Room.findById(req.params.roomId);
+    // if (!room) return res.status(404).json({ message: 'Room not found' });
+
+    // const isMember = room.members.some(
+    //   memberId => memberId.toString() === req.user.userId
+    // );
+
+    // if (!isMember) {
+    //   return res.status(403).json({ message: 'You are not a member of this room' });
+    // }
+
+
+
+
+
         const cacheKey = `room:message:${req.params.roomId }`;
 
         //-----------CHECK REDIS FIRST-----------------------

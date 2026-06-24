@@ -39,9 +39,6 @@ app.use('/api/messages', require('./routes/message.routes'));
 app.use('/api/upload',   require('./routes/upload.routes'));
 
 
-// ===== TEMP FEATURE: ROOM INVITE SYSTEM — DELETE THIS LINE LATER =====
-app.use('/api/invites', require('./routes/invite.routes'));
-// ===== END TEMP FEATURE =====
 
 
 
