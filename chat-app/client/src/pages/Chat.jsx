@@ -215,17 +215,33 @@ export default function Chat() {
       {/* SIDEBAR */}
       <div style={{ width: 260, background: '#1a1a2e', color: 'white', display: 'flex', flexDirection: 'column' }}>
         <div style={{ padding: '16px', borderBottom: '1px solid #2a2a4a' }}>
-          <div style={{ fontWeight: 700, fontSize: 18, color: '#5DCAA5' }}>LinKsy</div>
-          <div style={{ fontSize: 12, color: isConnected ? '#5DCAA5' : '#ff6b6b', marginTop: 2 }}>
-            {isConnected ? '🟢 Connected' : '🔴 Disconnected'}
+          <div style={{ fontWeight: 700, fontSize: 18, color: '#e180b5' }}>LinKsy</div>
+          <div style={{ fontSize: 12, color: isConnected ? '#4b96c1' : '#ff6b6b', marginTop: 2 }}>
+            {isConnected ? ' Online' : 'Offline'}
           </div>
         </div>
+
+      <button
+      onClick={() => navigate('/discover')}
+      style={{
+        margin: '8px 16px',
+        padding: '8px 0',
+        borderRadius: 8,
+        border: '1px solid #2a2a4a',
+        background: 'transparent',
+        color: '#4b96c1',
+        fontSize: 13,
+        cursor: 'pointer'
+      }}
+    >
+      🔍 Discover People
+    </button>
 
         <div style={{ padding: '12px 16px 6px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: 12, color: '#8888aa', textTransform: 'uppercase', letterSpacing: 1 }}>Rooms</span>
           <button
             onClick={() => setShowCreateRoom(!showCreateRoom)}
-            style={{ background: 'none', border: 'none', color: '#5DCAA5', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}
+            style={{ background: 'none', border: 'none', color: '#4b96c1', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}
           >+</button>
         </div>
 
@@ -250,7 +266,7 @@ export default function Chat() {
                 padding: '10px 16px',
                 cursor: 'pointer',
                 background: activeRoom?._id === room._id ? '#2a2a4a' : 'transparent',
-                borderLeft: activeRoom?._id === room._id ? '3px solid #5DCAA5' : '3px solid transparent',
+                borderLeft: activeRoom?._id === room._id ? '3px solid #4b96c1' : '3px solid transparent',
                 transition: 'background 0.15s'
               }}
             >
@@ -318,7 +334,7 @@ export default function Chat() {
                       maxWidth: '70%',
                       padding: msg.type === 'image' ? '4px' : '8px 14px',
                       borderRadius: isMe ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                      background: isMe ? '#1D9E75' : 'white',
+                      background: isMe ? '#0f060c' : 'white',
                       color: isMe ? 'white' : '#333',
                       boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                     }}>

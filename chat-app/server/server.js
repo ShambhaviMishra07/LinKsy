@@ -37,8 +37,8 @@ app.use('/api/auth',     require('./routes/auth.routes'));
 app.use('/api/rooms',    require('./routes/room.routes'));
 app.use('/api/messages', require('./routes/message.routes'));
 app.use('/api/upload',   require('./routes/upload.routes'));
-
-
+app.use('/api/follow', require('./routes/follow.routes'));
+app.use('/api/users', require('./routes/user.routes'));
 
 
 

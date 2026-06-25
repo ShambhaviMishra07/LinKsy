@@ -23,6 +23,15 @@ const userSchema = new mongoose.Schema({
         type: String,
         deafult: ''
     },
+     bio: {
+    type: String,
+    default: '',
+    maxlength: 150
+   },
+   isPrivate: {
+    type: Boolean,
+    default: false
+   },
     isOnline: {
         type: Boolean,
         default: false

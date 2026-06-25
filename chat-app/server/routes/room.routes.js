@@ -4,6 +4,7 @@ const express = require('express');
 const router = express.Router();
 const Room = require('../models/Room');
 const auth = require('../middleware/auth.middleware');
+const Follow = require('../models/Follow');
 
 // ── GET ALL PUBLIC ROOMS ───────────────────────────────────────
 // Called when user opens the app — loads the room list in sidebar
@@ -68,29 +69,42 @@ router.post('/:roomId/join', auth, async (req, res) => {
 // When User A wants to DM User B, call this first
 // If DM room exists between them → return it
 // If not → create a new private room
+
 router.post('/dm/:targetUserId', auth, async (req, res) => {
   try {
     const myId = req.user.userId;
     const theirId = req.params.targetUserId;
 
-    // Look for an existing private room with exactly these two members
-    // $all means the members array must contain ALL of these values
     const existingDM = await Room.findOne({
       isPrivate: true,
       members: { $all: [myId, theirId], $size: 2 }
-      // $size: 2 ensures there are exactly 2 members — not more
     });
 
     if (existingDM) {
-      return res.json(existingDM); // already have a DM, return it
+      return res.json(existingDM);
     }
 
-    // Create a new DM room
+    // Check mutual follow status
+    const iFollowThem = await Follow.exists({
+      follower: myId,
+      following: theirId
+    });
+
+    const theyFollowMe = await Follow.exists({
+      follower: theirId,
+      following: myId
+    });
+
+    const isMutual = !!iFollowThem && !!theyFollowMe;
+
     const dm = await Room.create({
-      name: `dm-${myId}-${theirId}`, // internal name, not shown in UI
+      name: `dm-${myId}-${theirId}`,
       isPrivate: true,
       createdBy: myId,
-      members: [myId, theirId]
+      members: [myId, theirId],
+
+      isMessageRequest: !isMutual,
+      requestedBy: !isMutual ? myId : null
     });
 
     res.status(201).json(dm);
@@ -99,4 +113,43 @@ router.post('/dm/:targetUserId', auth, async (req, res) => {
   }
 });
 
+// ACCEPT A MESSAGE REQUEST
+router.post('/:roomId/accept-request', auth, async (req, res) => {
+  try {
+    const room = await Room.findById(req.params.roomId);
+
+    if (!room) {
+      return res.status(404).json({ message: 'Room not found' });
+    }
+
+    if (!room.members.includes(req.user.userId)) {
+      return res.status(403).json({ message: 'Not authorized' });
+    }
+
+    room.isMessageRequest = false;
+    room.requestedBy = null;
+
+    await room.save();
+
+    res.json({ message: 'Message request accepted' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// GET MY PENDING MESSAGE REQUESTS
+router.get('/requests/pending', auth, async (req, res) => {
+  try {
+    const requests = await Room.find({
+      isPrivate: true,
+      isMessageRequest: true,
+      members: req.user.userId,
+      requestedBy: { $ne: req.user.userId }
+    }).populate('members', 'username avatar');
+
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 module.exports = router;

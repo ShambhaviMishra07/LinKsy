@@ -34,7 +34,17 @@ const roomSchema = new mongoose.Schema({
     content: String,
     sender: String,
     createdAt: Date
-  }
+  },
+  // In Room schema, add:
+isMessageRequest: {
+  type: Boolean,
+  default: false
+},
+requestedBy: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: 'User',
+  default: null
+}
 }, { timestamps: true });
 
 module.exports = mongoose.model('Room', roomSchema);
