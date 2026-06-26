@@ -39,7 +39,7 @@ app.use('/api/messages', require('./routes/message.routes'));
 app.use('/api/upload',   require('./routes/upload.routes'));
 app.use('/api/follow', require('./routes/follow.routes'));
 app.use('/api/users', require('./routes/user.routes'));
-
+app.use('/api/notifications', require('./routes/notification.routes'));
 
 
 // Health check route — Railway uses this to verify your server is alive

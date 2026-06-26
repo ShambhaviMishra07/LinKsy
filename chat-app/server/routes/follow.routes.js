@@ -6,6 +6,9 @@ const Follow = require('../models/Follow');
 const FollowRequest = require('../models/FollowRequest');
 const User = require('../models/User');
 const auth = require('../middleware/auth.middleware');
+const Notification = require('../models/Notification');
+
+
 
 // ── SEND A FOLLOW REQUEST ──────────────────────────────────────
 // POST /api/follow/:targetUserId
@@ -37,17 +40,42 @@ router.post('/:targetUserId', auth, async (req, res) => {
     // If target account is PUBLIC, auto-accept — create Follow immediately
     // If target account is PRIVATE, create a pending FollowRequest instead
     if (!targetUser.isPrivate) {
-      const follow = await Follow.create({ follower: myId, following: targetId });
-      return res.status(201).json({ status: 'accepted', follow });
-    }
+  const follow = await Follow.create({
+    follower: myId,
+    following: targetId
+  });
 
-    const request = await FollowRequest.create({
-      from: myId,
-      to: targetId,
-      status: 'pending'
-    });
+  // Notify user that someone followed them
+  await Notification.create({
+    recipient: targetId,
+    sender: myId,
+    type: 'follow'
+  });
 
-    res.status(201).json({ status: 'pending', request });
+  return res.status(201).json({
+    status: 'accepted',
+    follow
+  });
+}
+
+const request = await FollowRequest.create({
+  from: myId,
+  to: targetId,
+  status: 'pending'
+});
+
+// Notify user that someone requested to follow them
+await Notification.create({
+  recipient: targetId,
+  sender: myId,
+  type: 'follow_request',
+  refId: request._id
+});
+
+res.status(201).json({
+  status: 'pending',
+  request
+});
 
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -83,13 +111,24 @@ router.post('/requests/:requestId/accept', auth, async (req, res) => {
     }
 
     // Create the real Follow relationship
-    await Follow.create({ follower: request.from, following: request.to });
+      await Follow.create({
+      follower: request.from,
+      following: request.to
+    });
 
-    // Mark request as accepted (or delete it — keeping it gives you a history)
     request.status = 'accepted';
     await request.save();
 
-    res.json({ message: 'Follow request accepted' });
+    // Notify the requester that their follow request was accepted
+    await Notification.create({
+      recipient: request.from,
+      sender: request.to,
+      type: 'follow_accepted'
+    });
+
+    res.json({
+      message: 'Follow request accepted'
+    });
 
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -162,5 +201,48 @@ router.get('/:userId/following', auth, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+
+
+
+// ── UNFOLLOW A USER ──────────────────────────────────────────────
+// DELETE /api/follow/:targetUserId
+router.delete('/:targetUserId', auth, async (req, res) => {
+  try {
+    const result = await Follow.findOneAndDelete({
+      follower: req.user.userId,
+      following: req.params.targetUserId
+    });
+
+    if (!result) {
+      return res.status(404).json({ message: 'You are not following this user' });
+    }
+
+    res.json({ message: 'Unfollowed successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── CANCEL A PENDING FOLLOW REQUEST ─────────────────────────────
+// DELETE /api/follow/requests/:targetUserId/cancel
+// Used when you sent a request to a private account and want to take it back
+router.delete('/requests/:targetUserId/cancel', auth, async (req, res) => {
+  try {
+    const result = await FollowRequest.findOneAndDelete({
+      from: req.user.userId,
+      to: req.params.targetUserId,
+      status: 'pending'
+    });
+
+    if (!result) {
+      return res.status(404).json({ message: 'No pending request found' });
+    }
+
+    res.json({ message: 'Request cancelled' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 module.exports = router;
