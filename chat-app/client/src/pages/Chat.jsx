@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import api from '../api/axios';
+import NotificationBell from '../components/NotificationBell';
+
 
 export default function Chat() {
   const { socket, isConnected } = useSocket();
@@ -214,12 +216,31 @@ export default function Chat() {
 
       {/* SIDEBAR */}
       <div style={{ width: 260, background: '#1a1a2e', color: 'white', display: 'flex', flexDirection: 'column' }}>
-        <div style={{ padding: '16px', borderBottom: '1px solid #2a2a4a' }}>
-          <div style={{ fontWeight: 700, fontSize: 18, color: '#e180b5' }}>LinKsy</div>
-          <div style={{ fontSize: 12, color: isConnected ? '#4b96c1' : '#ff6b6b', marginTop: 2 }}>
-            {isConnected ? ' Online' : 'Offline'}
-          </div>
-        </div>
+     <div style={{ padding: '16px', borderBottom: '1px solid #2a2a4a' }}>
+  <div
+    style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center'
+    }}
+  >
+    <div style={{ fontWeight: 700, fontSize: 18, color: '#e180b5' }}>
+      LinKsy
+    </div>
+
+    <NotificationBell />
+  </div>
+
+  <div
+    style={{
+      fontSize: 12,
+      color: isConnected ? '#4b96c1' : '#ff6b6b',
+      marginTop: 2
+    }}
+  >
+    {isConnected ? ' Online' : 'Offline'}
+  </div>
+</div>
 
       <button
       onClick={() => navigate('/discover')}

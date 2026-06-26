@@ -31,9 +31,38 @@ export default function Discover() {
     }
   };
 
-  const handleFollow = async (userId) => {
-    try {
+  const handleFollowToggle = async (userId) => {
+  const current = statusMap[userId];
+
+  try {
+    if (current?.iFollow) {
+      // UNFOLLOW
+      await api.delete(`/follow/${userId}`);
+
+      setStatusMap(prev => ({
+        ...prev,
+        [userId]: {
+          ...prev[userId],
+          iFollow: false
+        }
+      }));
+
+    } else if (current?.pendingRequest) {
+      // CANCEL PENDING REQUEST
+      await api.delete(`/follow/requests/${userId}/cancel`);
+
+      setStatusMap(prev => ({
+        ...prev,
+        [userId]: {
+          ...prev[userId],
+          pendingRequest: false
+        }
+      }));
+
+    } else {
+      // FOLLOW
       const { data } = await api.post(`/follow/${userId}`);
+
       setStatusMap(prev => ({
         ...prev,
         [userId]: {
@@ -42,10 +71,12 @@ export default function Discover() {
           pendingRequest: data.status === 'pending'
         }
       }));
-    } catch (err) {
-      alert(err.response?.data?.message || 'Failed to follow');
     }
-  };
+
+  } catch (err) {
+    alert(err.response?.data?.message || 'Action failed');
+  }
+};
 
   const getButtonLabel = (userId) => {
     const s = statusMap[userId];
@@ -109,19 +140,31 @@ export default function Discover() {
               )}
             </div>
 
-            {/* Follow button */}
-            <button
-              onClick={() => handleFollow(user._id)}
-              disabled={statusMap[user._id]?.iFollow || statusMap[user._id]?.pendingRequest}
-              style={{
-                padding: '7px 16px', borderRadius: 8, border: 'none',
-                background: statusMap[user._id]?.iFollow ? c.surfaceLight : c.pink,
-                color: statusMap[user._id]?.iFollow ? c.textPrimary : '#fff',
-                fontWeight: 500, fontSize: 13, cursor: 'pointer', flexShrink: 0
-              }}
-            >
-              {getButtonLabel(user._id)}
-            </button>
+        <button
+        onClick={() => handleFollowToggle(user._id)}
+        style={{
+          padding: '7px 16px',
+          borderRadius: 8,
+          border:
+            statusMap[user._id]?.iFollow || statusMap[user._id]?.pendingRequest
+              ? `1px solid ${c.border}`
+              : 'none',
+          background:
+            statusMap[user._id]?.iFollow || statusMap[user._id]?.pendingRequest
+              ? 'transparent'
+              : c.pink,
+          color:
+            statusMap[user._id]?.iFollow || statusMap[user._id]?.pendingRequest
+              ? c.textPrimary
+              : '#fff',
+          fontWeight: 500,
+          fontSize: 13,
+          cursor: 'pointer',
+          flexShrink: 0
+        }}
+      >
+        {getButtonLabel(user._id)}
+      </button>
           </div>
         ))}
       </div>
