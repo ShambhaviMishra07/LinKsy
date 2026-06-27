@@ -6,6 +6,7 @@ import Chat from './pages/Chat';
 import Discover from './pages/Discover';
 import Profile from './pages/Profile';
 import Requests from './pages/Requests';
+import EditProfile from './pages/EditProfile';
 
 
 // Protect chat route
@@ -39,6 +40,13 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+        <Route 
+        path="/profile/edit" 
+        element={
+        <ProtectedRoute>
+          <EditProfile />
+          </ProtectedRoute>
+} />
 
         <Route
           path="/profile/:userId"

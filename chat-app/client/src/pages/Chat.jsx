@@ -224,9 +224,10 @@ export default function Chat() {
       alignItems: 'center'
     }}
   >
-    <div style={{ fontWeight: 700, fontSize: 18, color: '#e180b5' }}>
-      LinKsy
-    </div>
+   
+  <div style={{ fontWeight: 500, fontSize: 18, color: '#ED93B1', letterSpacing: '0.3px' }}>
+  lin<span style={{ color: '#F4C0D1' }}>K</span>sy
+</div>
 
     <NotificationBell />
   </div>
@@ -307,15 +308,20 @@ export default function Chat() {
             </div>
           )}
         </div>
-
-        <div style={{ padding: '12px 16px', borderTop: '1px solid #2a2a4a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: 13 }}>👤 {user.username}</span>
-          <button
-            onClick={logout}
-            style={{ background: 'none', border: '1px solid #8888aa', color: '#8888aa', padding: '4px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 12 }}
-          >Logout</button>
-        </div>
-      </div>
+        
+      <div style={{ padding: '12px 16px', borderTop: '1px solid #2a2a4a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <span
+        onClick={() => navigate(`/profile/${user.id}`)}
+        style={{ fontSize: 13, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+      >
+        <i className="ti ti-circle-filled" style={{ fontSize: 16, color: '#ED93B1' }} aria-hidden="true"></i>
+        {user.username}
+      </span>
+      <button onClick={logout} style={{ padding: '4px 12px', borderRadius: 4, border: 'none', cursor: 'pointer' }}>
+        Logout
+      </button>
+    </div>
+    </div>
 
       {/* MAIN CHAT AREA */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -360,7 +366,7 @@ export default function Chat() {
                       boxShadow: '0 1px 2px rgba(0,0,0,0.1)'
                     }}>
                       {!isMe && (
-                        <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 3, color: '#1D9E75', padding: msg.type === 'image' ? '4px 8px 0' : 0 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, marginBottom: 3, color: '#4287a9', padding: msg.type === 'image' ? '4px 8px 0' : 0 }}>
                           {msg.sender?.username}
                         </div>
                       )}
@@ -402,7 +408,7 @@ export default function Chat() {
               <button
                 onClick={sendMessage}
                 disabled={!input.trim()}
-                style={{ padding: '10px 20px', borderRadius: 24, border: 'none', background: input.trim() ? '#1D9E75' : '#ccc', color: 'white', cursor: input.trim() ? 'pointer' : 'default', fontSize: 14, flexShrink: 0 }}
+                style={{ padding: '10px 20px', borderRadius: 24, border: 'none', background: input.trim() ? '#ed5dbd' : '#ccc', color: 'white', cursor: input.trim() ? 'pointer' : 'default', fontSize: 14, flexShrink: 0 }}
               >Send</button>
             </div>
           </>
