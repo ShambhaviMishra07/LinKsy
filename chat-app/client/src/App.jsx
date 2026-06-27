@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import Chat from './pages/Chat';
 import Discover from './pages/Discover';
 import Profile from './pages/Profile';
+import Requests from './pages/Requests';
+
 
 // Protect chat route
 const ProtectedRoute = ({ children }) => {
@@ -46,6 +48,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+
+        <Route
+         path="/requests" 
+         element={
+         <ProtectedRoute>
+          <Requests />
+        </ProtectedRoute>
+       } />
       </Routes>
     </BrowserRouter>
   );

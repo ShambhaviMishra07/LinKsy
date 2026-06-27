@@ -113,12 +113,21 @@ export default function NotificationBell() {
           )}
 
           {notifications.map(n => (
-            <div
+             <div
               key={n._id}
-              onClick={() => navigate(`/profile/${n.sender._id}`)}
+              onClick={() => {
+                if (n.type === 'follow_request') {
+                  navigate('/requests');
+                } else {
+                  navigate(`/profile/${n.sender._id}`);
+                }
+              }}
               style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '10px 16px', cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 10,
+                padding: '10px 16px',
+                cursor: 'pointer',
                 borderBottom: `1px solid ${c.border}`
               }}
             >
