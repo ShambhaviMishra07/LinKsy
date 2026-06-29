@@ -13,7 +13,7 @@ export default function BottomNav() {
   const tabs = [
     { path: '/home', Icon: IconSpiral, label: 'Home' },
     { path: '/discover', Icon: IconSparkles, label: 'Search' },
-    { path: '/messages', Icon: IconFeather, label: 'Messages' },
+    { path: '/chat', Icon: IconFeather, label: 'Messages' },
     { path: `/profile/${user.id}`, Icon: IconCircle, label: 'Account' }
   ];
 

@@ -3,11 +3,14 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import Home from './pages/Home';
-import Chat from './pages/Chat';
+// import Chat from './pages/Chat';
+import Messages from './pages/Messages';  
+import Conversation from './pages/Conversation';
 import Discover from './pages/Discover';
 import Profile from './pages/Profile';
 import Requests from './pages/Requests';
 import EditProfile from './pages/EditProfile';
+
 
 
 // Protect chat route
@@ -31,14 +34,29 @@ export default function App() {
             <Home />
             </ProtectedRoute>
         } />
-        <Route
+        {/* <Route
           path="/chat"
           element={
             <ProtectedRoute>
               <Chat />
             </ProtectedRoute>
           }
-        />
+        /> */}
+
+        <Route 
+        path="/chat" 
+        element={
+         <ProtectedRoute>
+          <Messages />
+          </ProtectedRoute>
+      } />
+       <Route 
+       path="/chat/:roomId" 
+       element={
+        <ProtectedRoute>
+          <Conversation />
+          </ProtectedRoute>
+        } />
 
         <Route
           path="/discover"

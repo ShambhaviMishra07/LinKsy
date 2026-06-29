@@ -62,7 +62,7 @@ export default function Profile() {
   const startChat = async () => {
     try {
       const { data } = await api.post(`/rooms/dm/${userId}`);
-      navigate(`/chat?room=${data._id}`);
+       navigate(`/chat/${data._id}`, { state: { room: data } });
     } catch (err) {
       console.error(err);
     }

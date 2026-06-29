@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { colors as c } from '../theme';
+import BottomNav from '../components/BottomNav';
+
 
 export default function Discover() {
   const [users, setUsers] = useState([]);
@@ -168,6 +170,7 @@ export default function Discover() {
           </div>
         ))}
       </div>
+      <BottomNav />
     </div>
   );
 }
