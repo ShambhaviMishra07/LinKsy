@@ -1,5 +1,5 @@
 const cloudinary = require('cloudinary').v2;
-const { cloudinaryStorage, CloudinaryStorage } = require('multer-storage-cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const multer = require('multer');
 
 //configure cloudinary with your account credentials
@@ -7,7 +7,14 @@ cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
+
 });
+
+
+
+console.log("Cloud:", process.env.CLOUDINARY_CLOUD_NAME);
+console.log("Key:", process.env.CLOUDINARY_API_KEY);
+console.log("Secret exists:", !!process.env.CLOUDINARY_API_SECRET);
 
 //CloudinaryStorgae tells multer where to send the file
 //instead of saving to disk, it strams directly to cloudinary

@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Register from './pages/Register';
 import Login from './pages/Login';
+import Home from './pages/Home';
 import Chat from './pages/Chat';
 import Discover from './pages/Discover';
 import Profile from './pages/Profile';
@@ -23,6 +24,13 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/login" element={<Login />} />
 
+         <Route 
+         path="/home" 
+         element={
+          <ProtectedRoute>
+            <Home />
+            </ProtectedRoute>
+        } />
         <Route
           path="/chat"
           element={

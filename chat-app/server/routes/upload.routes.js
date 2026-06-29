@@ -21,8 +21,15 @@ router.post('/', auth, upload.single('image'), (req, res) => {
 
         });
     } catch (err) {
-        res.status(500).json({ message : err.message});
-    }
+        console.error("========== UPLOAD ERROR ==========");
+        console.error(err);
+        console.error("Message:", err.message);
+        console.error("Stack:", err.stack);
+
+        res.status(500).json({
+            message: err.message
+        });
+}
 })
 
 module.exports = router;

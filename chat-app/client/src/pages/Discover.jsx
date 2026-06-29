@@ -94,10 +94,10 @@ export default function Discover() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
           <h2 style={{ fontSize: 20, fontWeight: 500, margin: 0 }}>Discover people</h2>
           <button
-            onClick={() => navigate('/chat')}
+            onClick={() => navigate('/home')}
             style={{ background: 'none', border: 'none', color: c.textMuted, fontSize: 13, cursor: 'pointer' }}
           >
-            ← Back to chat
+            ← Back to Home
           </button>
         </div>
 

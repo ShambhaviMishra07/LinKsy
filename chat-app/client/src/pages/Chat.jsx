@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSocket } from '../context/SocketContext';
 import api from '../api/axios';
 import NotificationBell from '../components/NotificationBell';
+import BottomNav from '../components/BottomNav';
 
 
 export default function Chat() {
@@ -211,8 +212,22 @@ export default function Chat() {
     navigate('/login');
   };
 
-  return (
-    <div style={{ display: 'flex', height: '100vh', fontFamily: 'sans-serif' }}>
+return (
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      height: '100vh',
+      fontFamily: 'sans-serif'
+    }}
+  >
+    <div
+      style={{
+        display: 'flex',
+        flex: 1,
+        overflow: 'hidden'
+      }}
+    >
 
       {/* SIDEBAR */}
       <div style={{ width: 260, background: '#1a1a2e', color: 'white', display: 'flex', flexDirection: 'column' }}>
@@ -418,7 +433,10 @@ export default function Chat() {
             <div style={{ fontSize: 18 }}>Select a room or create one to start chatting</div>
           </div>
         )}
-      </div>
+           </div>
     </div>
-  );
+
+    <BottomNav />
+  </div>
+);
 }

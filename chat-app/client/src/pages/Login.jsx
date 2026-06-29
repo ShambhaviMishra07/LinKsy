@@ -19,7 +19,7 @@ export default function Login() {
 
       setTimeout(() => connectSocket(), 100); // ← delay ensures token is saved first
 
-      navigate('/chat');
+      navigate('/home');
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed');
     }

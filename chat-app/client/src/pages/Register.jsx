@@ -32,7 +32,7 @@ export default function Register() {
       // Small delay before socket connection
       setTimeout(() => connectSocket(), 100);
 
-      navigate('/chat');
+      navigate('/home');
     } catch (err) {
       setError(err.response?.data?.message || 'Something went wrong');
     }

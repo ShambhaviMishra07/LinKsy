@@ -4,6 +4,8 @@ import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { colors as c } from '../theme';
+import { IconBell } from '@tabler/icons-react';
+
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
@@ -81,7 +83,7 @@ export default function NotificationBell() {
           fontSize: 20, color: c.textPrimary, position: 'relative', padding: 4
         }}
       >
-        🔔
+       <IconBell size={20} stroke={1.6} color={c.textPrimary} /> 
         {unreadCount > 0 && (
           <span style={{
             position: 'absolute', top: 0, right: 0,
