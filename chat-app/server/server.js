@@ -40,7 +40,7 @@ app.use('/api/upload',   require('./routes/upload.routes'));
 app.use('/api/follow', require('./routes/follow.routes'));
 app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/notifications', require('./routes/notification.routes'));
-
+app.use('/api/moments', require('./routes/moment.routes'));
 
 // Health check route — Railway uses this to verify your server is alive
 // app.get('/health', (req, res) => res.json({ status: 'ok' }));

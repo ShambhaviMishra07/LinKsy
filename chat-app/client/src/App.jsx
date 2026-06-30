@@ -10,7 +10,7 @@ import Discover from './pages/Discover';
 import Profile from './pages/Profile';
 import Requests from './pages/Requests';
 import EditProfile from './pages/EditProfile';
-
+import CreateMoment from './pages/CreateMoment';
 
 
 // Protect chat route
@@ -34,14 +34,7 @@ export default function App() {
             <Home />
             </ProtectedRoute>
         } />
-        {/* <Route
-          path="/chat"
-          element={
-            <ProtectedRoute>
-              <Chat />
-            </ProtectedRoute>
-          }
-        /> */}
+       
 
         <Route 
         path="/chat" 
@@ -90,6 +83,13 @@ export default function App() {
           <Requests />
         </ProtectedRoute>
        } />
+       <Route 
+       path="/moments/create" 
+       element={
+       <ProtectedRoute>
+        <CreateMoment />
+      </ProtectedRoute>
+} />
       </Routes>
     </BrowserRouter>
   );
