@@ -17,7 +17,7 @@ const notificationSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['follow', 'follow_request', 'follow_accepted', 'message_request', 'like', 'comment'],
+    enum: ['follow', 'follow_request', 'follow_accepted', 'message_request', 'like', 'comment', 'sos','location_share'],
     required: true
     // we only use 'follow', 'follow_request', 'follow_accepted' for now
     // the rest are ready for when you build posts later

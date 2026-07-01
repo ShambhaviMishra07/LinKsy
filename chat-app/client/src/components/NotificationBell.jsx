@@ -62,6 +62,8 @@ export default function NotificationBell() {
       case 'follow': return 'started following you';
       case 'follow_request': return 'requested to follow you';
       case 'follow_accepted': return 'accepted your follow request';
+       case 'sos': return 'triggered an SOS alert!';
+       case 'location_share': return 'is sharing their live location';
       default: return 'interacted with you';
     }
   };
@@ -117,13 +119,15 @@ export default function NotificationBell() {
           {notifications.map(n => (
              <div
               key={n._id}
-              onClick={() => {
-                if (n.type === 'follow_request') {
-                  navigate('/requests');
-                } else {
-                  navigate(`/profile/${n.sender._id}`);
-                }
-              }}
+             onClick={() => {
+              if (n.type === 'follow_request') {
+                navigate('/requests');
+              } else if (n.type === 'sos' ||n.type === 'location_share') {
+                navigate(`/sos/track/${n.refId}`); // refId holds the SOSAlert's _id
+              } else {
+                navigate(`/profile/${n.sender._id}`);
+              }
+            }}
               style={{
                 display: 'flex',
                 alignItems: 'center',

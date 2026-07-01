@@ -7,6 +7,8 @@ import api from '../api/axios';
 import { colors as c } from '../theme';
 import BottomNav from '../components/BottomNav';
 import NotificationBell from '../components/NotificationBell';
+import SOSPill from '../components/SOSPill';
+
 
 export default function Home() {
   const navigate = useNavigate();
@@ -47,15 +49,19 @@ const loadMoments = async () => {
     <div style={{ background: c.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
       {/* Top bar */}
-      <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '16px 20px', borderBottom: `0.5px solid ${c.border}`
-      }}>
-        <span style={{ fontSize: 19, fontWeight: 500, color: c.pinkLight }}>
-          lin<span style={{ color: c.pinkPale }}>K</span>sy
-        </span>
+        <div style={{
+      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+      padding: '16px 20px', borderBottom: `0.5px solid ${c.border}`
+    }}>
+      <span style={{ fontSize: 19, fontWeight: 500, color: c.pinkLight }}>
+        lin<span style={{ color: c.pinkPale }}>K</span>sy
+      </span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <SOSPill />
         <NotificationBell />
       </div>
+    </div>  
+     
 
       <div style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto' }}>
 

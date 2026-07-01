@@ -6,6 +6,8 @@ import api from '../api/axios';
 import { colors as c } from '../theme';
 import BottomNav from '../components/BottomNav';
 import NotificationBell from '../components/NotificationBell';
+import SOSPill from '../components/SOSPill';
+
 
 export default function Profile() {
   const { userId } = useParams();
@@ -98,14 +100,20 @@ export default function Profile() {
 
       {/* Top bar */}
       <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        padding: '16px 20px', borderBottom: `0.5px solid ${c.border}`
-      }}>
-        <span style={{ fontSize: 16, fontWeight: 500, color: c.textPrimary }}>
-          {user.username}
-        </span>
-        {isOwnProfile && <NotificationBell />}
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    padding: '16px 20px', borderBottom: `0.5px solid ${c.border}`
+  }}>
+    <span style={{ fontSize: 16, fontWeight: 500, color: c.textPrimary }}>
+      {user.username}
+    </span>
+    {isOwnProfile && (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <SOSPill />
+        <NotificationBell />
       </div>
+    )}
+  </div>
+
 
       {/* Profile content */}
       <div style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto', padding: '24px 20px' }}>

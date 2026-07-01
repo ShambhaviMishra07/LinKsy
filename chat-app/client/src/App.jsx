@@ -11,6 +11,10 @@ import Profile from './pages/Profile';
 import Requests from './pages/Requests';
 import EditProfile from './pages/EditProfile';
 import CreateMoment from './pages/CreateMoment';
+import SOSContacts from './pages/SOSContacts';
+import SOS from './pages/SOS';
+import SOSTrack from './pages/SOSTrack';
+
 
 
 // Protect chat route
@@ -90,6 +94,28 @@ export default function App() {
         <CreateMoment />
       </ProtectedRoute>
 } />
+    <Route 
+    path="/sos" 
+    element={
+  <ProtectedRoute>
+    <SOS />
+  </ProtectedRoute>
+} />
+
+     <Route 
+     path="/sos/contacts" 
+     element={
+     <ProtectedRoute>
+      <SOSContacts />
+    </ProtectedRoute>
+} />
+    <Route 
+    path="/sos/track/:alertId" 
+    element={
+    <ProtectedRoute>
+      <SOSTrack />
+      </ProtectedRoute>
+    } />
       </Routes>
     </BrowserRouter>
   );
