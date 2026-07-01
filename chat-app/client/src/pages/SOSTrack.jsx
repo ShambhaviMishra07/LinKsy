@@ -13,6 +13,13 @@ export default function SOSTrack() {
   const [alert, setAlert] = useState(null);
   const [currentLocation, setCurrentLocation] = useState(null);
   const hasBeepedRef = useRef(false); // ensures the beep only plays ONCE, not on every update
+  const [hasVideo, setHasVideo] = useState(false);
+  const videoRef = useRef(null);
+  const mediaSourceRef = useRef(null);
+  const sourceBufferRef = useRef(null);
+  const chunkQueueRef = useRef([]);
+
+
 
   useEffect(() => {
     loadAlert();
@@ -66,6 +73,41 @@ export default function SOSTrack() {
       // not on every single GPS update, or it would beep constantly
       if (!hasBeepedRef.current) {
         playBeep();
+        const initVideoPlayer = () => {
+  if (!window.MediaSource) return;
+
+  const ms = new MediaSource();
+  mediaSourceRef.current = ms;
+
+  if (videoRef.current) {
+    videoRef.current.src = URL.createObjectURL(ms);
+  }
+
+  ms.addEventListener('sourceopen', () => {
+    const mime = 'video/webm;codecs=vp9';
+    if (!MediaSource.isTypeSupported(mime)) return;
+
+    const sb = ms.addSourceBuffer(mime);
+    sourceBufferRef.current = sb;
+
+    sb.addEventListener('updateend', () => {
+      if (chunkQueueRef.current.length > 0 && !sb.updating) {
+        sb.appendBuffer(chunkQueueRef.current.shift());
+      }
+    });
+  });
+};
+
+const appendChunk = (buffer) => {
+  const sb = sourceBufferRef.current;
+  if (!sb) return;
+
+  if (sb.updating) {
+    chunkQueueRef.current.push(buffer);
+  } else {
+    sb.appendBuffer(buffer);
+  }
+};
         hasBeepedRef.current = true;
       }
       setCurrentLocation({ lat: data.lat, lng: data.lng, updatedAt: data.timestamp });
@@ -73,10 +115,21 @@ export default function SOSTrack() {
 
     socket.on('sos_location_update', onLocationUpdate);
 
-    return () => {
-      socket.off('sos_location_update', onLocationUpdate);
-      socket.emit('leave_sos_alert', alertId);
-    };
+    socket.on('sos_video_chunk', (data) => {
+  setHasVideo(true);
+
+  if (!mediaSourceRef.current) {
+    initVideoPlayer();
+  }
+
+  appendChunk(data.chunk);
+});
+
+   return () => {
+  socket.off('sos_location_update', onLocationUpdate);
+  socket.off('sos_video_chunk');
+  socket.emit('leave_sos_alert', alertId);
+};
   }, [socket, alertId]);
 
   if (!alert) {
@@ -136,7 +189,36 @@ export default function SOSTrack() {
           </div>
         ) : (
           <div style={{ textAlign: 'center', color: c.textMuted, fontSize: 13, padding: 30 }}>
-            Waiting for location...
+           {hasVideo && (
+  <div
+    style={{
+      background: c.surface,
+      borderRadius: 14,
+      padding: '14px',
+      marginTop: 14
+    }}
+  >
+    <div
+      style={{
+        fontSize: 13,
+        color: c.textMuted,
+        marginBottom: 8
+      }}
+    >
+      Live camera feed
+    </div>
+
+    <video
+      ref={videoRef}
+      autoPlay
+      controls
+      style={{
+        width: '100%',
+        borderRadius: 10
+      }}
+    />
+  </div>
+)}
           </div>
         )}
       </div>

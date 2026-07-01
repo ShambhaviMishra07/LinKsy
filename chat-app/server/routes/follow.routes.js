@@ -7,7 +7,7 @@ const FollowRequest = require('../models/FollowRequest');
 const User = require('../models/User');
 const auth = require('../middleware/auth.middleware');
 const Notification = require('../models/Notification');
-
+const emitNotification = require('../utils/notifyUser');
 
 
 // ── SEND A FOLLOW REQUEST ──────────────────────────────────────
@@ -46,11 +46,21 @@ router.post('/:targetUserId', auth, async (req, res) => {
   });
 
   // Notify user that someone followed them
-  await Notification.create({
-    recipient: targetId,
-    sender: myId,
-    type: 'follow'
-  });
+    const io = req.app.get('io');
+
+    const newNotif = await Notification.create({
+      recipient: targetId,
+      sender: myId,
+      type: 'follow'
+    });
+
+    emitNotification(io, targetId, {
+      ...newNotif._doc,
+      sender: {
+        _id: myId,
+        username: req.user.username
+      }
+    });
 
   return res.status(201).json({
     status: 'accepted',
@@ -65,12 +75,22 @@ const request = await FollowRequest.create({
 });
 
 // Notify user that someone requested to follow them
-await Notification.create({
-  recipient: targetId,
-  sender: myId,
-  type: 'follow_request',
-  refId: request._id
-});
+    const io = req.app.get('io');
+
+    const newNotif = await Notification.create({
+      recipient: targetId,
+      sender: myId,
+      type: 'follow_request',
+      refId: request._id
+    });
+
+    emitNotification(io, targetId, {
+      ...newNotif._doc,
+      sender: {
+        _id: myId,
+        username: req.user.username
+      }
+    });
 
 res.status(201).json({
   status: 'pending',

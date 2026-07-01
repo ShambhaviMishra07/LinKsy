@@ -66,7 +66,9 @@ router.delete('/contacts/:contactDocId', auth, async (req, res) => {
 router.post('/trigger', auth, async (req, res) => {
   try {
     // Get all trusted contacts for this user
-    const contacts = await TrustedContact.find({ user: req.user.userId });
+    const contacts = await TrustedContact.find({
+      user: req.user.userId
+    });
 
     if (contacts.length === 0) {
       return res.status(400).json({
@@ -77,22 +79,39 @@ router.post('/trigger', auth, async (req, res) => {
     // Create the SOS alert record
     const alert = await SOSAlert.create({
       triggeredBy: req.user.userId,
-       alertType: 'sos',
+      alertType: 'sos',
       status: 'active',
       notifiedContacts: contacts.map(c => c.contact)
     });
 
     // Notify every trusted contact via your existing Notification system
-    // This reuses the exact pattern from your follow notifications
     const notificationPromises = contacts.map(c =>
       Notification.create({
         recipient: c.contact,
         sender: req.user.userId,
-        type: 'sos', 
+        type: 'sos',
         refId: alert._id
       })
     );
+
     await Promise.all(notificationPromises);
+
+    // Emit socket event immediately
+    const io = req.app.get('io');
+
+    if (io) {
+      const User = require('../models/User');
+
+      const sender = await User.findById(req.user.userId)
+        .select('username');
+
+      contacts.forEach(c => {
+        io.to(`user:${c.contact}`).emit('sos_alert_triggered', {
+          alertId: alert._id,
+          from: sender.username
+        });
+      });
+    }
 
     res.status(201).json({
       alertId: alert._id,
@@ -100,7 +119,9 @@ router.post('/trigger', auth, async (req, res) => {
     });
 
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    res.status(500).json({
+      message: err.message
+    });
   }
 });
 
@@ -140,10 +161,8 @@ router.post('/resolve/:alertId', auth, async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 });
+// server/routes/sos.routes.js — update /share-location route
 
-
-
-// ── START A LOCATION SHARE (no alarm) ────────────────────────────
 router.post('/share-location', auth, async (req, res) => {
   try {
     const contacts = await TrustedContact.find({ user: req.user.userId });
@@ -156,7 +175,7 @@ router.post('/share-location', auth, async (req, res) => {
 
     const alert = await SOSAlert.create({
       triggeredBy: req.user.userId,
-      alertType: 'location_share',   // ← the key difference from /trigger
+      alertType: 'location_share',
       status: 'active',
       notifiedContacts: contacts.map(c => c.contact)
     });
@@ -165,17 +184,29 @@ router.post('/share-location', auth, async (req, res) => {
       Notification.create({
         recipient: c.contact,
         sender: req.user.userId,
-        type: 'location_share',      // ← new notification type, distinct from 'sos'
+        type: 'location_share',
         refId: alert._id
       })
     );
     await Promise.all(notificationPromises);
 
-    res.status(201).json({
-      alertId: alert._id,
-      notifiedCount: contacts.length
-    });
+    // ── Emit directly to each contact's personal socket room ──
+    // This fires IMMEDIATELY — no waiting for GPS updates
+    const io = req.app.get('io');
+    if (io) {
+      const sender = await require('../models/User')
+        .findById(req.user.userId)
+        .select('username');
 
+      contacts.forEach(c => {
+        io.to(`user:${c.contact}`).emit('sos_location_share_started', {
+          alertId: alert._id,
+          from: sender.username
+        });
+      });
+    }
+
+    res.status(201).json({ alertId: alert._id, notifiedCount: contacts.length });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

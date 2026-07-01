@@ -8,10 +8,16 @@ const http = require('http');
 const connectDB = require('./config/db');
 const initSocket = require('./socket/socket');
 
+
+
 connectDB();
 
 const app = express();
 const httpServer = http.createServer(app);
+
+// Initialize Socket.IO
+const io = initSocket(httpServer);
+app.set('io', io); // Makes io available in routes via req.app.get('io')
 
 // Allow both local dev and production frontend
 const allowedOrigins = [
@@ -42,7 +48,7 @@ app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/notifications', require('./routes/notification.routes'));
 app.use('/api/moments', require('./routes/moment.routes'));
 app.use('/api/sos', require('./routes/sos.routes'));
-
+app.use('/api/posts', require('./routes/post.routes'));
 // Health check route — Railway uses this to verify your server is alive
 // app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

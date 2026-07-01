@@ -1,35 +1,42 @@
 const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth.middleware');
-const {upload} = require('../config/cloudinary');
+const { upload, uploadToCloudinary } = require('../config/cloudinary');
 
-//POST /api/upload
-// upload.single('image') = multer processes one file from the image field
-//after this middleware runs. req.file contains cloudinary response
+// POST /api/upload
+router.post('/', auth, upload.single('image'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        message: 'No file uploaded'
+      });
+    }
 
-router.post('/', auth, upload.single('image'), (req, res) => {
-    try{
-        if(!req.file){
-            return res.status(400).json({message: "no file uploaded"});
-        }
+    // Detect whether the uploaded file is an image or video
+    const isVideo = req.file.mimetype.startsWith('video');
 
-        //req.file.path = the cloudinary URL of the uploaded image
-        //this is what we store as the message content
-        res.json({
-            url : req.file.path,
-            publicId: req.file.filename //used if you want to delete it later
+    // Upload to Cloudinary
+    const result = await uploadToCloudinary(
+      req.file.buffer,
+      'linksy/chat',
+      isVideo ? 'video' : 'image'
+    );
 
-        });
-    } catch (err) {
-        console.error("========== UPLOAD ERROR ==========");
-        console.error(err);
-        console.error("Message:", err.message);
-        console.error("Stack:", err.stack);
+    res.json({
+      url: result.secure_url,
+      publicId: result.public_id
+    });
 
-        res.status(500).json({
-            message: err.message
-        });
-}
-})
+  } catch (err) {
+    console.error('========== UPLOAD ERROR ==========');
+    console.error(err);
+    console.error('Message:', err.message);
+    console.error('Stack:', err.stack);
+
+    res.status(500).json({
+      message: err.message
+    });
+  }
+});
 
 module.exports = router;

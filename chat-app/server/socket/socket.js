@@ -42,35 +42,40 @@ const initSocket = (httpServer) => {
   });
 
   // -------- CONNECTION EVENT --------
-  io.on('connection', async (socket) => {
-    console.log(
-      `User connected: ${socket.user.username} | Socket ID: ${socket.id}`
-    );
+ io.on('connection', async (socket) => {
+  console.log(
+    `User connected: ${socket.user.username} | Socket ID: ${socket.id}`
+  );
 
-    // Mark user online
-    await redis.set(
+  // Each user joins a personal room so we can send them direct socket events
+  // without going through a chat room
+  socket.join(`user:${socket.user.userId}`);
+  console.log(`✅ User connected: ${socket.user.username}`);
+
+  // Mark user online
+  await redis.set(
+    `user:online:${socket.user.userId}`,
+    '1',
+    'EX',
+    60
+  );
+
+  io.emit('user_online', {
+    userId: socket.user.userId
+  });
+
+  // Load events
+  require('./events/message.events')(io, socket);
+  require('./events/room.events')(io, socket);
+  require('./events/sos.events')(io, socket);
+
+  // Heartbeat
+  const heartbeat = setInterval(async () => {
+    await redis.expire(
       `user:online:${socket.user.userId}`,
-      '1',
-      'EX',
       60
     );
-
-    io.emit('user_online', {
-      userId: socket.user.userId
-    });
-
-    // Load events
-    require('./events/message.events')(io, socket);
-    require('./events/room.events')(io, socket);
-    require('./events/sos.events')(io, socket);
-    
-    // Heartbeat
-    const heartbeat = setInterval(async () => {
-      await redis.expire(
-        `user:online:${socket.user.userId}`,
-        60
-      );
-    }, 30000);
+  }, 30000);
 
     // Disconnect
     socket.on('disconnect', async () => {
