@@ -193,13 +193,26 @@ router.post('/share-location', auth, async (req, res) => {
     // ── Emit directly to each contact's personal socket room ──
     // This fires IMMEDIATELY — no waiting for GPS updates
     const io = req.app.get('io');
+    console.log('io instance exists:', !!io);        // should print: true
+    console.log('Notifying contacts:', contacts.length);
+
+
     if (io) {
       const sender = await require('../models/User')
         .findById(req.user.userId)
         .select('username');
 
       contacts.forEach(c => {
-        io.to(`user:${c.contact}`).emit('sos_location_share_started', {
+
+
+
+          const room = `user:${c.contact}`;
+    console.log('Emitting to room:', room);  
+
+
+
+
+        io.to(room).emit('sos_location_share_started', {
           alertId: alert._id,
           from: sender.username
         });

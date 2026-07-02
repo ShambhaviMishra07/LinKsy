@@ -117,42 +117,37 @@ useEffect(() => {
 
   const playAttentionBeep = () => {
     try {
-      const AudioContext =
-        window.AudioContext || window.webkitAudioContext;
-
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
       if (!AudioContext) return;
-
       const ctx = new AudioContext();
 
       const playTone = (startTime) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-
         osc.type = 'square';
-        osc.frequency.value = 1000;
-
+        osc.frequency.value = 1200;
         osc.connect(gain);
         gain.connect(ctx.destination);
-
-        gain.gain.setValueAtTime(0.3, startTime);
-        gain.gain.exponentialRampToValueAtTime(
-          0.001,
-          startTime + 0.15
-        );
-
+        gain.gain.setValueAtTime(0.4, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.2);
         osc.start(startTime);
-        osc.stop(startTime + 0.15);
+        osc.stop(startTime + 0.2);
       };
 
-      // 5 double-beeps, one per second
+      // 5 beeps, 1 second apart
       for (let i = 0; i < 5; i++) {
         playTone(ctx.currentTime + i * 1.0);
-        playTone(ctx.currentTime + i * 1.0 + 0.25);
+        playTone(ctx.currentTime + i * 1.0 + 0.3);
       }
     } catch (err) {
-      console.error('Beep error:', err);
+      console.error('Beep failed:', err);
     }
   };
+  
+
+
+
+
 
   // Fires immediately when someone triggers SOS
   const onSOSTriggered = ({ alertId, from }) => {

@@ -50,7 +50,7 @@ const initSocket = (httpServer) => {
   // Each user joins a personal room so we can send them direct socket events
   // without going through a chat room
   socket.join(`user:${socket.user.userId}`);
-  console.log(`✅ User connected: ${socket.user.username}`);
+  console.log(`User connected: ${socket.user.username}`);
 
   // Mark user online
   await redis.set(
