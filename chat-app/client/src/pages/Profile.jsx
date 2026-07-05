@@ -7,6 +7,7 @@ import { colors as c } from '../theme';
 import BottomNav from '../components/BottomNav';
 import NotificationBell from '../components/NotificationBell';
 import SOSPill from '../components/SOSPill';
+import { IconPlus } from '@tabler/icons-react';
 
 
 export default function Profile() {
@@ -15,6 +16,8 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [followStatus, setFollowStatus] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
+
 
   useEffect(() => {
     loadProfile();
@@ -95,7 +98,7 @@ export default function Profile() {
 
   const { user, followersCount, followingCount, postsCount, isOwnProfile } = profile;
 
-  return (
+    return (
     <div style={{ background: c.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
       {/* Top bar */}
@@ -106,13 +109,55 @@ export default function Profile() {
     <span style={{ fontSize: 16, fontWeight: 500, color: c.textPrimary }}>
       {user.username}
     </span>
-    {isOwnProfile && (
+    {/* {isOwnProfile && (
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         <SOSPill />
         <NotificationBell />
       </div>
+    )} */}
+
+    
+{isOwnProfile && (
+  <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
+    <button
+      onClick={() => setShowCreateMenu(!showCreateMenu)}
+      style={{ background: 'none', border: 'none', cursor: 'pointer', color: c.textPrimary, padding: 4 }}
+    >
+      <IconPlus size={22} stroke={1.6} />
+    </button>
+    <SOSPill />
+    <NotificationBell />
+
+    {showCreateMenu && (
+      <div style={{
+        position: 'absolute', top: '130%', right: 0,
+        background: c.surface, border: `1px solid ${c.border}`,
+        borderRadius: 12, overflow: 'hidden', zIndex: 50, width: 180,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
+      }}>
+        {[
+          { label: '📸 New post', path: '/posts/create' },
+          { label: '⭕ New Moment', path: '/moments/create' }
+        ].map(item => (
+          <button
+            key={item.path}
+            onClick={() => { navigate(item.path); setShowCreateMenu(false); }}
+            style={{
+              display: 'block', width: '100%', padding: '12px 16px',
+              background: 'none', border: 'none', color: c.textPrimary,
+              fontSize: 13, textAlign: 'left', cursor: 'pointer',
+              borderBottom: `0.5px solid ${c.border}`
+            }}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
     )}
   </div>
+)}
+  </div>
+
 
 
       {/* Profile content */}

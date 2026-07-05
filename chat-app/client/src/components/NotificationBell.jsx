@@ -24,24 +24,46 @@ export default function NotificationBell() {
   }, []);
 
   // Listen for realtime notifications
+  // useEffect(() => {
+  //   if (!socket) return;
+
+  //   const onNewNotification = (notif) => {
+  //     setUnreadCount(prev => prev + 1);
+
+  //     setNotifications(prev => {
+  //       if (!open) return prev;
+  //       return [notif, ...prev];
+  //     });
+  //   };
+
+  //   socket.on('new_notification', onNewNotification);
+
+  //   return () => {
+  //     socket.off('new_notification', onNewNotification);
+  //   };
+  // }, [socket, open]);
+
   useEffect(() => {
-    if (!socket) return;
+  if (!socket) return;
 
-    const onNewNotification = (notif) => {
-      setUnreadCount(prev => prev + 1);
+  const onNewNotification = (notif) => {
+    console.log('Received notification:', notif);
 
-      setNotifications(prev => {
-        if (!open) return prev;
-        return [notif, ...prev];
-      });
-    };
+    setUnreadCount(prev => prev + 1);
 
-    socket.on('new_notification', onNewNotification);
+    setNotifications(prev => {
+      // avoid duplicates
+      if (prev.some(n => n._id === notif._id)) return prev;
+      return [notif, ...prev];
+    });
+  };
 
-    return () => {
-      socket.off('new_notification', onNewNotification);
-    };
-  }, [socket, open]);
+  socket.on('new_notification', onNewNotification);
+
+  return () => {
+    socket.off('new_notification', onNewNotification);
+  };
+}, [socket]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

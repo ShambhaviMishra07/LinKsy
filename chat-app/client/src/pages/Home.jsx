@@ -1,8 +1,9 @@
+
 // client/src/pages/Home.jsx
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IconPlus } from '@tabler/icons-react';
+
 import api from '../api/axios';
 import { colors as c } from '../theme';
 import BottomNav from '../components/BottomNav';
@@ -15,7 +16,7 @@ export default function Home() {
   const [posts, setPosts] = useState([]);
   const [momentGroups, setMomentGroups] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showCreateMenu, setShowCreateMenu] = useState(false);
+
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
@@ -48,7 +49,8 @@ const loadFeed = async () => {
   return (
     <div style={{ background: c.bg, minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-   <div
+
+      <div
   style={{
     display: 'flex',
     justifyContent: 'space-between',
@@ -71,82 +73,13 @@ const loadFeed = async () => {
     style={{
       display: 'flex',
       alignItems: 'center',
-      gap: 12
+      gap: 10
     }}
   >
-    {/* Create menu */}
-    <div style={{ position: 'relative' }}>
-      <button
-        onClick={() => setShowCreateMenu(!showCreateMenu)}
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          color: c.textPrimary,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}
-      >
-        <IconPlus size={22} stroke={1.6} />
-      </button>
-
-      {showCreateMenu && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '130%',
-            right: 0,
-            width: 180,
-            background: c.surface,
-            border: `1px solid ${c.border}`,
-            borderRadius: 12,
-            overflow: 'hidden',
-            zIndex: 100,
-            boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
-          }}
-        >
-          {[
-            {
-              label: '📸 New post',
-              path: '/posts/create'
-            },
-            {
-              label: '⭕ New Moment',
-              path: '/moments/create'
-            }
-          ].map(item => (
-            <button
-              key={item.path}
-              onClick={() => {
-                navigate(item.path);
-                setShowCreateMenu(false);
-              }}
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                background: 'none',
-                border: 'none',
-                color: c.textPrimary,
-                fontSize: 13,
-                textAlign: 'left',
-                cursor: 'pointer',
-                borderBottom: `0.5px solid ${c.border}`
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-
     <SOSPill />
-
     <NotificationBell />
   </div>
 </div>
-     
 
       <div style={{ flex: 1, maxWidth: 480, width: '100%', margin: '0 auto' }}>
 
@@ -384,4 +317,4 @@ const loadFeed = async () => {
       <BottomNav />
     </div>
   );
-}
+}  

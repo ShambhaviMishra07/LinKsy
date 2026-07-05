@@ -6,6 +6,8 @@ const TrustedContact = require('../models/TrustedContact');
 const SOSAlert = require('../models/SOSAlert');
 const Notification = require('../models/Notification');
 const auth = require('../middleware/auth.middleware');
+const emitNotification = require('../utils/notifyUser');
+
 
 // ── ADD A TRUSTED CONTACT ────────────────────────────────────────
 router.post('/contacts/:userId', auth, async (req, res) => {
@@ -85,19 +87,24 @@ router.post('/trigger', auth, async (req, res) => {
     });
 
     // Notify every trusted contact via your existing Notification system
-    const notificationPromises = contacts.map(c =>
-      Notification.create({
-        recipient: c.contact,
-        sender: req.user.userId,
-        type: 'sos',
-        refId: alert._id
-      })
-    );
+   
+    const io = req.app.get('io');
 
-    await Promise.all(notificationPromises);
+for (const c of contacts) {
+  const notif = await Notification.create({
+    recipient: c.contact,
+    sender: req.user.userId,
+    type: 'sos',
+    refId: alert._id
+  });
+
+  await notif.populate('sender', 'username avatar');
+
+  emitNotification(io, c.contact.toString(), notif);
+}
 
     // Emit socket event immediately
-    const io = req.app.get('io');
+    // const io = req.app.get('io');
 
     if (io) {
       const User = require('../models/User');
@@ -180,19 +187,33 @@ router.post('/share-location', auth, async (req, res) => {
       notifiedContacts: contacts.map(c => c.contact)
     });
 
-    const notificationPromises = contacts.map(c =>
-      Notification.create({
-        recipient: c.contact,
-        sender: req.user.userId,
-        type: 'location_share',
-        refId: alert._id
-      })
-    );
-    await Promise.all(notificationPromises);
+    // const notificationPromises = contacts.map(c =>
+    //   Notification.create({
+    //     recipient: c.contact,
+    //     sender: req.user.userId,
+    //     type: 'location_share',
+    //     refId: alert._id
+    //   })
+    // );
+    // await Promise.all(notificationPromises);
+    const io = req.app.get('io');
+
+for (const c of contacts) {
+  const notif = await Notification.create({
+    recipient: c.contact,
+    sender: req.user.userId,
+    type: 'location_share',
+    refId: alert._id
+  });
+
+  await notif.populate('sender', 'username avatar');
+
+  emitNotification(io, c.contact.toString(), notif);
+}
 
     // ── Emit directly to each contact's personal socket room ──
     // This fires IMMEDIATELY — no waiting for GPS updates
-    const io = req.app.get('io');
+    // const io = req.app.get('io');
     console.log('io instance exists:', !!io);        // should print: true
     console.log('Notifying contacts:', contacts.length);
 
