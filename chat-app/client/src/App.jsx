@@ -18,6 +18,9 @@ import SOSTrack from './pages/SOSTrack';
 import CreatePost from './pages/CreatePost';
 import CreateMoment from './pages/CreateMoment';
 import SafetyMap from './pages/SafetyMap';
+import FollowersList from './pages/FollowersList';
+import FollowingList from './pages/FollowingList';
+
 
 
 const ProtectedRoute = ({ children }) => {
@@ -195,6 +198,10 @@ useEffect(() => {
       <Route path="/profile/edit" element={<ProtectedRoute><EditProfile /></ProtectedRoute>} />
 
       <Route path="/profile/:userId" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+
+      <Route path="/profile/:userId/followers" element={<ProtectedRoute><FollowersList /></ProtectedRoute>} />
+
+      <Route path="/profile/:userId/following" element={<ProtectedRoute><FollowingList /></ProtectedRoute>} />
 
       <Route path="/sos" element={<ProtectedRoute><SOS /></ProtectedRoute>} />
 
