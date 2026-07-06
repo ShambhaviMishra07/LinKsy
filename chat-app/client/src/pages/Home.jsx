@@ -16,12 +16,13 @@ export default function Home() {
   const [posts, setPosts] = useState([]);
   const [momentGroups, setMomentGroups] = useState([]);
   const [loading, setLoading] = useState(true);
-
+ const [myMoments, setMyMoments] = useState([]);
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
  useEffect(() => {
   loadMoments();
+  loadMyMoments();
   loadFeed();
 }, []);
 
@@ -32,6 +33,14 @@ const loadMoments = async () => {
     setMomentGroups(data);
   } catch (err) {
     console.error('Failed to load moments:', err.message);
+  }
+};
+const loadMyMoments = async () => {
+  try {
+    const { data } = await api.get('/moments/mine');
+    setMyMoments(data);
+  } catch (err) {
+    console.error(err);
   }
 };
 
@@ -93,73 +102,96 @@ const loadFeed = async () => {
     borderBottom: `0.5px solid ${c.border}`
   }}
 >
-  {/* Your own moment */}
+{/* Your own moment */}
+<div
+  onClick={() =>
+    myMoments.length > 0
+      ? navigate('/moments/view', {
+          state: {
+            group: {
+              author: {
+                _id: user.id,
+                username: user.username,
+                avatar: ''
+              },
+              moments: myMoments,
+              hasUnseen: false
+            }
+          }
+        })
+      : navigate('/moments/create')
+  }
+  style={{
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: 5,
+    flexShrink: 0,
+    cursor: 'pointer'
+  }}
+>
   <div
-    onClick={() => navigate('/moments/create')}
     style={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: 5,
-      flexShrink: 0,
-      cursor: 'pointer'
+      width: 58,
+      height: 58,
+      borderRadius: '50%',
+      padding: 2,
+      background:
+        myMoments.length > 0
+          ? `linear-gradient(135deg, ${c.pinkLight}, ${c.pinkDark})`
+          : 'transparent',
+      border:
+        myMoments.length > 0
+          ? 'none'
+          : `1.5px dashed ${c.border}`
     }}
   >
     <div
       style={{
-        width: 58,
-        height: 58,
+        width: '100%',
+        height: '100%',
         borderRadius: '50%',
-        background: c.surface,
-        border: `1.5px dashed ${c.border}`,
+        background: c.pinkDark,
+        border: `2px solid ${c.bg}`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
+        fontSize: 18,
+        fontWeight: 500,
+        color: c.pinkPale,
         position: 'relative'
       }}
     >
-      <span
-        style={{
-          width: '100%',
-          height: '100%',
-          borderRadius: '50%',
-          background: c.pinkDark,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: 18,
-          fontWeight: 500,
-          color: c.pinkPale
-        }}
-      >
-        {user.username?.charAt(0)?.toUpperCase()}
-      </span>
+      {user.username?.charAt(0)?.toUpperCase()}
 
-      <div
-        style={{
-          position: 'absolute',
-          bottom: -2,
-          right: -2,
-          width: 18,
-          height: 18,
-          borderRadius: '50%',
-          background: c.pink,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          border: `2px solid ${c.bg}`,
-          fontSize: 12,
-          color: '#fff'
-        }}
-      >
-        +
-      </div>
+      {myMoments.length === 0 && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: -2,
+            right: -2,
+            width: 18,
+            height: 18,
+            borderRadius: '50%',
+            background: c.pink,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: `2px solid ${c.bg}`,
+            fontSize: 12,
+            color: '#fff'
+          }}
+        >
+          +
+        </div>
+      )}
     </div>
-
-    <span style={{ fontSize: 11, color: c.textMuted }}>
-      Your moment
-    </span>
   </div>
+
+  <span style={{ fontSize: 11, color: c.textMuted }}>
+    {myMoments.length > 0 ? 'Your moment' : 'Add moment'}
+  </span>
+</div>
 
   {momentGroups
     .filter(group => group.author._id !== user.id)

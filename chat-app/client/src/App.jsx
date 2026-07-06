@@ -20,7 +20,7 @@ import CreateMoment from './pages/CreateMoment';
 import SafetyMap from './pages/SafetyMap';
 import FollowersList from './pages/FollowersList';
 import FollowingList from './pages/FollowingList';
-
+import MomentViewer from './pages/MomentViewer';
 
 
 const ProtectedRoute = ({ children }) => {
@@ -32,86 +32,7 @@ const ProtectedRoute = ({ children }) => {
 function AppRoutes() {
   // const navigate = useNavigate();
   const { socket } = useSocket();
-  // const beepedAlerts = useRef(new Set());
-  // const beepIntervalRef = useRef(null);
-
-  // // ── 5-second attention beep that plays on ANY page ──
-  // const playAttentionBeep = () => {
-  //   const AudioContext = window.AudioContext || window.webkitAudioContext;
-  //   if (!AudioContext) return;
-
-  //   const ctx = new AudioContext();
-
-  //   // Play one sharp double-beep
-  //   const playTone = (startTime) => {
-  //     const osc = ctx.createOscillator();
-  //     const gain = ctx.createGain();
-  //     osc.type = 'square';
-  //     osc.frequency.value = 1000;
-  //     osc.connect(gain);
-  //     gain.connect(ctx.destination);
-  //     gain.gain.setValueAtTime(0.3, startTime);
-  //     gain.gain.exponentialRampToValueAtTime(0.001, startTime + 0.15);
-  //     osc.start(startTime);
-  //     osc.stop(startTime + 0.15);
-  //   };
-
-    // Play immediately
-  //   playTone(ctx.currentTime);
-  //   playTone(ctx.currentTime + 0.25);
-
-  //   // Repeat every second for 5 seconds total = 5 double-beeps
-  //   let count = 0;
-  //   const interval = setInterval(() => {
-  //     count++;
-  //     if (count >= 4) {
-  //       // 4 more after the first = 5 total
-  //       clearInterval(interval);
-  //       ctx.close();
-  //       return;
-  //     }
-  //     playTone(ctx.currentTime);
-  //     playTone(ctx.currentTime + 0.25);
-  //   }, 1000);
-
-  //   beepIntervalRef.current = interval;
-  // };
-
-//   useEffect(() => {
-//     if (!socket) return;
-
-//    const onLocationUpdate = (data) => {
-//   if (!beepedAlerts.current.has(data.alertId)) {
-//     beepedAlerts.current.add(data.alertId);
-//     playAttentionBeep();
-//   }
-// };
-
-//   const onSOSAlert = (data) => {
-//   if (!beepedAlerts.current.has(data.alertId)) {
-//     beepedAlerts.current.add(data.alertId);
-//     playAttentionBeep();
-//   }
-// };
-
-//     socket.on('sos_location_share_started', (data) => {
-//   if (!beepedAlerts.current.has(data.alertId)) {
-//     beepedAlerts.current.add(data.alertId);
-//     playAttentionBeep();
-//   }
-// });
-
-//     socket.on('sos_location_update', onLocationUpdate);
-//     socket.on('sos_alert_triggered', onSOSAlert);
-
-//     return () => {
-//       socket.off('sos_location_update', onLocationUpdate);
-//       socket.off('sos_alert_triggered', onSOSAlert);
-//       socket.off('sos_location_share_started');
-//       if (beepIntervalRef.current) clearInterval(beepIntervalRef.current);
-//     };
-//   }, [socket]);
-
+ 
 
 useEffect(() => {
   if (!socket) return;
@@ -212,6 +133,8 @@ useEffect(() => {
       <Route path="/posts/create" element={<ProtectedRoute><CreatePost /></ProtectedRoute>} />
 
       <Route path="/moments/create" element={<ProtectedRoute><CreateMoment /></ProtectedRoute>} />
+
+      <Route path="/moments/view" element={<ProtectedRoute><MomentViewer /></ProtectedRoute>} />
       
       <Route path="/sos/map" element={ <ProtectedRoute><SafetyMap /></ProtectedRoute>
 } />

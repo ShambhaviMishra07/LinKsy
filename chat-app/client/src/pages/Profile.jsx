@@ -17,10 +17,12 @@ export default function Profile() {
   const [followStatus, setFollowStatus] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showCreateMenu, setShowCreateMenu] = useState(false);
+  const [posts, setPosts] = useState([]);
 
 
   useEffect(() => {
     loadProfile();
+    loadUserPosts();
   }, [userId]);
 
   const loadProfile = async () => {
@@ -40,6 +42,29 @@ export default function Profile() {
       setLoading(false);
     }
   };
+
+  const loadUserPosts = async () => {
+  try {
+    const { data } = await api.get(`/posts/user/${userId}`);
+    setPosts(data);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+const handleDeletePost = async (postId) => {
+  if (!window.confirm('Delete this post?')) return;
+
+  try {
+    await api.delete(`/posts/${postId}`);
+
+    setPosts(prev =>
+      prev.filter(post => post._id !== postId)
+    );
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const handleFollowToggle = async () => {
     try {
@@ -255,15 +280,104 @@ export default function Profile() {
               : "You don't follow each other yet — your message will appear as a request."}
           </div>
         )}
+     
 
-        {/* Posts grid placeholder */}
-        <div style={{
-          marginTop: 28, paddingTop: 20, borderTop: `0.5px solid ${c.border}`,
-          textAlign: 'center', color: c.textMuted, fontSize: 13
-        }}>
-          <i className="ti ti-photo" style={{ fontSize: 28, display: 'block', marginBottom: 8 }} aria-hidden="true"></i>
-          No posts yet
+{/* Posts grid */}
+<div
+  style={{
+    marginTop: 28,
+    borderTop: `0.5px solid ${c.border}`
+  }}
+>
+  {posts.length === 0 ? (
+    <div
+      style={{
+        textAlign: 'center',
+        color: c.textMuted,
+        fontSize: 13,
+        padding: '40px 0'
+      }}
+    >
+      <div
+        style={{
+          fontSize: 28,
+          marginBottom: 8
+        }}
+      >
+        📷
+      </div>
+      No posts yet
+    </div>
+  ) : (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr 1fr',
+        gap: 2
+      }}
+    >
+      {posts.map(post => (
+        <div
+          key={post._id}
+          style={{
+            position: 'relative',
+            aspectRatio: '1',
+            overflow: 'hidden'
+          }}
+        >
+          {post.mediaType === 'video' ? (
+            <video
+              src={post.mediaUrl}
+              muted
+              playsInline
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block'
+              }}
+            />
+          ) : (
+            <img
+              src={post.mediaUrl}
+              alt="post"
+              style={{
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                display: 'block'
+              }}
+            />
+          )}
+
+          {isOwnProfile && (
+            <button
+              onClick={() => handleDeletePost(post._id)}
+              style={{
+                position: 'absolute',
+                top: 4,
+                right: 4,
+                background: 'rgba(0,0,0,0.6)',
+                border: 'none',
+                color: '#fff',
+                borderRadius: '50%',
+                width: 24,
+                height: 24,
+                fontSize: 12,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              ✕
+            </button>
+          )}
         </div>
+      ))}
+    </div>
+  )}
+</div>
       </div>
 
       <BottomNav />

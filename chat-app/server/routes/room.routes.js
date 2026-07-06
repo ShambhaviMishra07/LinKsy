@@ -8,12 +8,30 @@ const Follow = require('../models/Follow');
 
 // ── GET ALL PUBLIC ROOMS ───────────────────────────────────────
 // Called when user opens the app — loads the room list in sidebar
+// router.get('/', auth, async (req, res) => {
+//   try {
+//     const rooms = await Room.find({ isPrivate: false })
+//       .populate('createdBy', 'username')
+//       .populate('members', 'username')
+//       .sort({ updatedAt: -1 }); // most recently active first
+
+//     res.json(rooms);
+//   } catch (err) {
+//     res.status(500).json({ message: err.message });
+//   }
+// });
+
 router.get('/', auth, async (req, res) => {
   try {
-    const rooms = await Room.find({ isPrivate: false })
+    const rooms = await Room.find({
+      $or: [
+        { isPrivate: false },                    // all public rooms
+        { isPrivate: true, members: req.user.userId } // DMs you're part of
+      ]
+    })
+      .populate('members', 'username avatar')   // ← populate members with username
       .populate('createdBy', 'username')
-      .populate('members', 'username')
-      .sort({ updatedAt: -1 }); // most recently active first
+      .sort({ updatedAt: -1 });
 
     res.json(rooms);
   } catch (err) {

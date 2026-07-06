@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { IconFlower, IconCloud } from '@tabler/icons-react';
 import api from '../api/axios';
 import { colors as c } from '../theme';
+import CommentsSheet from './CommentsSheet';
+
 
 export default function PostCard({ post, currentUserId }) {
   const navigate = useNavigate();
@@ -80,7 +82,14 @@ export default function PostCard({ post, currentUserId }) {
           />
         </button>
         <button style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-          <IconCloud size={26} stroke={1.5} color={c.textSecondary} />
+          {/* <IconCloud size={26} stroke={1.5} color={c.textSecondary} /> */}
+
+        <CommentsSheet
+  postId={post._id}
+  commentsCount={post.commentsCount}
+  currentUserId={currentUserId}
+/>
+
         </button>
       </div>
 
