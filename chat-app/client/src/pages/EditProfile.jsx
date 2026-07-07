@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { colors as c } from '../theme';
 
+
+
 export default function EditProfile() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
@@ -16,6 +18,19 @@ export default function EditProfile() {
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [error, setError] = useState('');
+
+    const handleLogout = () => {
+    const confirmed = window.confirm(
+      'Are you sure you want to logout?'
+    );
+
+    if (!confirmed) return;
+
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+
+    navigate('/login');
+  };
 
   useEffect(() => {
     loadMyProfile();
@@ -207,6 +222,52 @@ export default function EditProfile() {
           </div>
         </div>
       </div>
+
+      {/* Logout button — place this after the isPrivate toggle div */}
+<div style={{ marginTop: 24 }}>
+  <button
+    onClick={handleLogout}
+    style={{
+      width: '15%',
+      padding: '12px 0',
+      borderRadius: 10,
+      border: 'none',
+      cursor: 'pointer',
+      fontSize: 14,
+      fontWeight: 600,
+      letterSpacing: '0.3px',
+      color: '#ffffff',
+
+      // Blue gradient with shine effect
+      background: 'linear-gradient(135deg,  #c385cb 50%, #1558B0 100%)',
+
+      // Shine layer using box-shadow
+      boxShadow: `
+        0 4px 15px rgba(61, 199, 114, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25)
+      `,
+
+      // Smooth hover transition
+      transition: 'all 0.2s ease'
+    }}
+    onMouseEnter={e => {
+      e.target.style.boxShadow = `
+        0 6px 20px rgba(79, 142, 247, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3)
+      `;
+      e.target.style.transform = 'translateY(-1px)';
+    }}
+    onMouseLeave={e => {
+      e.target.style.boxShadow = `
+        0 4px 15px rgba(79, 142, 247, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25)
+      `;
+      e.target.style.transform = 'translateY(0)';
+    }}
+  >
+    Logout
+  </button>
+</div>
     </div>
   );
 }
