@@ -44,6 +44,12 @@ requestedBy: {
   type: mongoose.Schema.Types.ObjectId,
   ref: 'User',
   default: null
+},
+unreadCounts: {
+  type: Map,
+  of: Number,
+  default: {}
+ 
 }
 }, { timestamps: true });
 

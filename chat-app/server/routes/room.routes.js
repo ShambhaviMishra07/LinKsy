@@ -39,6 +39,53 @@ router.get('/', auth, async (req, res) => {
   }
 });
 
+
+// ── GET TOTAL UNREAD MESSAGE COUNT ─────────────────────────────
+// Used for notification badge in navbar/sidebar
+
+router.get('/unread-count', auth, async (req, res) => {
+  try {
+    const rooms = await Room.find({
+      $or: [
+        { isPrivate: false },
+        { isPrivate: true, members: req.user.userId }
+      ]
+    });
+
+    let total = 0;
+
+    rooms.forEach(room => {
+      const count =
+        room.unreadCounts?.get(req.user.userId.toString()) || 0;
+
+      total += count;
+    });
+
+    res.json({ count: total });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── MARK ROOM AS READ ──────────────────────────────────────────
+router.post('/:roomId/read', auth, async (req, res) => {
+  try {
+    const room = await Room.findById(req.params.roomId);
+
+    if (!room) {
+      return res.status(404).json({ message: 'Room not found' });
+    }
+
+    room.unreadCounts.set(req.user.userId.toString(), 0);
+
+    await room.save();
+
+    res.json({ message: 'Marked as read' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 // ── CREATE A NEW ROOM ──────────────────────────────────────────
 router.post('/', auth, async (req, res) => {
   try {

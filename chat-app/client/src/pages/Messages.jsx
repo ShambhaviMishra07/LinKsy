@@ -166,7 +166,7 @@ export default function Messages() {
               </div>
             )}
 
-            {rooms.map(room => {
+            {/* {rooms.map(room => {
               const displayName = getDisplayName(room);
               return (
                 <div
@@ -210,7 +210,146 @@ export default function Messages() {
                   )}
                 </div>
               );
-            })}
+            })} */}
+
+
+            {rooms.map(room => {
+  const displayName = getDisplayName(room);
+  const myId = user.id || user._id;
+
+  // Get unread count for this room
+  const roomUnread =
+    room.unreadCounts?.[myId] ||
+    (room.unreadCounts instanceof Map
+      ? room.unreadCounts.get(myId)
+      : 0) ||
+    0;
+
+  const otherMember = room.isPrivate
+    ? room.members?.find(
+        m => (m._id || m).toString() !== myId
+      )
+    : null;
+
+  return (
+    <div
+      key={room._id}
+      onClick={() => openConversation(room)}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 12,
+        padding: '12px 20px',
+        cursor: 'pointer',
+        borderBottom: `0.5px solid ${c.border}`,
+        background: roomUnread > 0
+          ? `${c.pinkDark}11`
+          : 'transparent'
+      }}
+    >
+      <div
+        style={{
+          width: 48,
+          height: 48,
+          borderRadius: '50%',
+          background: c.pinkDark,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: 17,
+          fontWeight: 500,
+          color: c.pinkPale,
+          flexShrink: 0,
+          overflow: 'hidden'
+        }}
+      >
+        {otherMember?.avatar ? (
+          <img
+            src={otherMember.avatar}
+            alt=""
+            style={{
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover'
+            }}
+          />
+        ) : (
+          displayName.charAt(0).toUpperCase()
+        )}
+      </div>
+
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div
+          style={{
+            fontSize: 14,
+            color: c.textPrimary,
+            fontWeight: roomUnread > 0 ? 600 : 500
+          }}
+        >
+          {room.isPrivate ? '' : '# '}
+          {displayName}
+        </div>
+
+        {room.lastMessage && (
+          <div
+            style={{
+              fontSize: 12,
+              marginTop: 2,
+              color:
+                roomUnread > 0
+                  ? c.textSecondary
+                  : c.textMuted,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              fontWeight: roomUnread > 0 ? 500 : 400
+            }}
+          >
+            {room.lastMessage.sender}: {room.lastMessage.content}
+          </div>
+        )}
+      </div>
+
+      {/* Unread badge */}
+      {roomUnread > 0 && (
+        <span
+          style={{
+            background: c.pink,
+            color: '#fff',
+            fontSize: 11,
+            fontWeight: 600,
+            borderRadius: '50%',
+            minWidth: 20,
+            height: 20,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            padding: '0 4px'
+          }}
+        >
+          {roomUnread > 9 ? '9+' : roomUnread}
+        </span>
+      )}
+
+      {room.isMessageRequest && (
+        <span
+          style={{
+            fontSize: 11,
+            color: c.pink,
+            background: c.surface,
+            padding: '3px 8px',
+            borderRadius: 6,
+            flexShrink: 0,
+            border: `1px solid ${c.pinkDark}`
+          }}
+        >
+          Request
+        </span>
+      )}
+    </div>
+  );
+})}
           </div>
         )}
       </div>

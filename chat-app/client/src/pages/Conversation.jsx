@@ -23,27 +23,31 @@ export default function Conversation() {
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
   // ── Join room + load history when roomId changes ──
-  useEffect(() => {
-    if (!socket || !isConnected || !roomId) return;
+useEffect(() => {
+  if (!socket || !isConnected || !roomId) return;
 
-    socket.emit('join_room', roomId);
-    socket.emit('mark_seen', roomId);
+  socket.emit('join_room', roomId);
+  socket.emit('mark_seen', roomId);
 
-    const loadHistory = async () => {
-      try {
-        const { data } = await api.get(`/messages/${roomId}`);
-        setMessages(data.messages || []);
-      } catch (err) {
-        console.error('History load failed:', err.message);
-      }
-    };
-    loadHistory();
+  // Mark room as read — clears unread badge
+  api.post(`/rooms/${roomId}/read`)
+    .catch(console.error);
 
-    return () => {
-      socket.emit('leave_room', roomId);
-    };
-  }, [socket, isConnected, roomId]);
+  const loadHistory = async () => {
+    try {
+      const { data } = await api.get(`/messages/${roomId}`);
+      setMessages(data.messages || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
+  loadHistory();
+
+  return () => {
+    socket.emit('leave_room', roomId);
+  };
+}, [socket, isConnected, roomId]);
   // ── Socket listeners ──
   useEffect(() => {
     if (!socket) return;

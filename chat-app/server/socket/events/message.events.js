@@ -2,7 +2,9 @@
 // server/socket/events/message.events.js
 
 const Message = require('../../models/Message');
+const Room = require('../../models/Room');
 const redis = require('../../config/redis');
+
 
 module.exports = (io, socket) => {
 
@@ -17,6 +19,44 @@ module.exports = (io, socket) => {
         content: data.content,
         type: data.type || 'text'
       });
+
+      const room = await Room.findById(data.roomId);
+
+    if (room) {
+      room.members.forEach(memberId => {
+        const id = memberId.toString();
+
+        if (id !== socket.user.userId) {
+          const current = room.unreadCounts.get(id) || 0;
+          room.unreadCounts.set(id, current + 1);
+        }
+      });
+
+      await room.save();
+      for (const memberId of room.members) {
+    const id = memberId.toString();
+
+    if (id !== socket.user.userId) {
+      const allRooms = await Room.find({
+        $or: [
+          { isPrivate: false },
+          { isPrivate: true, members: id }
+        ]
+      });
+
+      let total = 0;
+
+      allRooms.forEach(r => {
+        total += r.unreadCounts?.get(id) || 0;
+      });
+
+      io.to(`user:${id}`).emit('unread_messages_count', {
+        count: total
+      });
+    }
+  }
+}
+
 
       await message.populate('sender', 'username avatar');
 
