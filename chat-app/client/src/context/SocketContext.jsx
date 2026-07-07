@@ -25,7 +25,9 @@ export const SocketProvider = ({ children }) => {
 
     console.log('🔄 Creating new socket connection...');
 
-    const newSocket = io('http://localhost:5000', {
+    const newSocket = io(
+      import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000', 
+      {
       auth: { token },
       reconnection: true,
       reconnectionAttempts: 5,

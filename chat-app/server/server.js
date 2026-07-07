@@ -23,14 +23,14 @@ app.set('io', io); // Makes io available in routes via req.app.get('io')
 const allowedOrigins = [
   'http://localhost:5173',
   process.env.CLIENT_URL  // your Vercel URL goes here after deploying frontend
-];
+].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
     // Allow requests with no origin (mobile apps, Postman)
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    callback(new Error('Not allowed by CORS'));
+    callback(new Error(`CORS blocked: ${origin}`));
   },
   credentials: true
 }));
@@ -54,6 +54,11 @@ app.use('/api/comments', require('./routes/comment.routes'));
 
 // Health check route — Railway uses this to verify your server is alive
 // app.get('/health', (req, res) => res.json({ status: 'ok' }));
+// In server.js, add this before your other routes:
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date() });
+});
+
 
 const PORT = process.env.PORT || 5000;
 httpServer.listen(PORT, () => console.log(`Server running on port ${PORT}`));
