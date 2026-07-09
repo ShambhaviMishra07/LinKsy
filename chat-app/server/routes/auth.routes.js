@@ -23,6 +23,8 @@ router.post('/register', async (req, res) =>{
 
        //3. save user to database
        const user = await User.create({
+         firstName: req.body.firstName || '',
+        lastName: req.body.lastName || '',
         username,
         email,
         password: hashedPassword
