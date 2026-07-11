@@ -25,6 +25,20 @@ const userSchema = new mongoose.Schema({
         required: true,
         minlength:6
     },
+    isVerified: {
+    type: Boolean,
+    default: false
+    // false until they click the email link
+    },
+    verificationToken: {
+    type: String,
+    default: null
+    // random UUID stored here, compared when they click the link
+    },
+    verificationExpires: {
+    type: Date,
+    default: null
+    },
     avatar: {
         type: String,
         deafult: ''
@@ -42,6 +56,7 @@ const userSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     }
+
 }, {timestamps: true }); //adds createdAt and updatedAt automatically
 
 module.exports = mongoose.model('User', userSchema);

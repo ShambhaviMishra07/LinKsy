@@ -21,6 +21,8 @@ import SafetyMap from './pages/SafetyMap';
 import FollowersList from './pages/FollowersList';
 import FollowingList from './pages/FollowingList';
 import MomentViewer from './pages/MomentViewer';
+import VerifyEmail from './pages/VerifyEmail';
+import OTPVerify from './pages/OTPVerify';
 
 
 const ProtectedRoute = ({ children }) => {
@@ -136,8 +138,12 @@ useEffect(() => {
 
       <Route path="/moments/view" element={<ProtectedRoute><MomentViewer /></ProtectedRoute>} />
       
-      <Route path="/sos/map" element={ <ProtectedRoute><SafetyMap /></ProtectedRoute>
-} />
+      <Route path="/sos/map" element={ <ProtectedRoute><SafetyMap /></ProtectedRoute>} />
+
+      <Route path="/verify-email" element={<VerifyEmail />} />
+
+      <Route path="/verify-otp" element={<OTPVerify />} />
+      
     </Routes>
   );
 }

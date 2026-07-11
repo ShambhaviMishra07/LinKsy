@@ -64,26 +64,29 @@ export default function Register() {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
+
     try {
-      const { data } = await api.post('/auth/register', {
-        firstName: form.firstName.trim(),
-        lastName: form.lastName.trim(),
-        username: form.username.trim(),
-        email: form.email.trim(),
-        password: form.password
-      });
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify({
-        ...data.user,
-        id: data.user.id || data.user._id
-      }));
-      setTimeout(() => connectSocket(), 100);
-      navigate('/home');
+     await api.post('/auth/register', {
+    firstName: form.firstName.trim(),
+    lastName: form.lastName.trim(),
+    username: form.username.trim(),
+    email: form.email.trim().toLowerCase(),
+    password: form.password
+});
+
+// No token returned — show email sent screen
+setSubmitted(true);
+
     } catch (err) {
       const msg = err.response?.data?.message || 'Something went wrong';
-      if (msg.toLowerCase().includes('email')) setErrors({ email: msg });
-      else if (msg.toLowerCase().includes('username')) setErrors({ username: msg });
-      else setErrors({ general: msg });
+
+      if (msg.toLowerCase().includes('email')) 
+        setErrors({ email: msg });
+      else if (msg.toLowerCase().includes('username')) 
+        setErrors({ username: msg });
+      else {
+        setErrors({ general: msg });
+      }
     } finally {
       setSubmitting(false);
     }

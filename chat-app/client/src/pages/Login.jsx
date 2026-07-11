@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 import { useSocket } from '../context/SocketContext';
+import { useSearchParams } from 'react-router-dom';
+
 
 // Import the shared components from Register.jsx
 // Since they're defined in the same file, extract them to a shared file
@@ -16,6 +18,9 @@ export default function Login() {
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [showPwd, setShowPwd] = useState(false);
+  const [searchParams] = useSearchParams();
+  const justVerified = searchParams.get('verified') === 'true';
+
 
   const validate = () => {
     const e = {};
@@ -26,25 +31,41 @@ export default function Login() {
     return Object.keys(e).length === 0;
   };
 
-  const handleSubmit = async (evt) => {
-    evt.preventDefault();
-    if (!validate()) return;
-    setSubmitting(true);
-    try {
-      const { data } = await api.post('/auth/login', form);
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify({
-        ...data.user,
-        id: data.user.id || data.user._id
-      }));
-      setTimeout(() => connectSocket(), 100);
-      navigate('/home');
-    } catch (err) {
-      setErrors({ general: err.response?.data?.message || 'Invalid email or password' });
-    } finally {
-      setSubmitting(false);
+const handleSubmit = async (evt) => {
+  evt.preventDefault();
+
+  if (!validate()) return;
+
+  setSubmitting(true);
+
+  try {
+    const { data } = await api.post('/auth/login', form);
+
+    if (data.requires2FA) {
+      // Navigate to OTP verification screen
+      navigate('/verify-otp', {
+        state: {
+          userId: data.userId,
+          email: data.user.email
+        }
+      });
     }
-  };
+  } catch (err) {
+    const msg =
+      err.response?.data?.message || 'Invalid email or password';
+
+    if (err.response?.data?.needsVerification) {
+      // Email not verified yet
+      setErrors({ general: msg });
+
+      // You can add a "Resend verification email" button later
+    } else {
+      setErrors({ general: msg });
+    }
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const inp = (field) => ({
     width: '100%', padding: '12px 16px 12px 42px',
@@ -84,11 +105,40 @@ export default function Login() {
         <div style={{ fontSize: 22, fontWeight: 600, color: '#fff', marginBottom: 4 }}>Welcome back</div>
         <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.45)', marginBottom: 28 }}>Sign in to continue</div>
 
-        {errors.general && (
-          <div style={{ background: 'rgba(255,107,138,0.15)', border: '1px solid #ff6b8a', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#ff6b8a', marginBottom: 16 }}>
-            {errors.general}
-          </div>
-        )}
+       {errors.general && (
+  <div
+    style={{
+      background: 'rgba(255,107,138,0.15)',
+      border: '1px solid #ff6b8a',
+      borderRadius: 10,
+      padding: '10px 14px',
+      fontSize: 13,
+      color: '#ff6b8a',
+      marginBottom: 16
+    }}
+  >
+    {errors.general}
+  </div>
+)}
+
+{justVerified && (
+  <div
+    style={{
+      background: 'rgba(93,202,165,0.15)',
+      border: '1px solid #5DCAA5',
+      borderRadius: 10,
+      padding: '10px 14px',
+      fontSize: 13,
+      color: '#5DCAA5',
+      marginBottom: 16,
+      textAlign: 'center'
+    }}
+  >
+    ✅ Email verified! You can now sign in.
+  </div>
+)}
+
+<form onSubmit={handleSubmit}></form>
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 16 }}>
