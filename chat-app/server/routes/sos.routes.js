@@ -88,37 +88,35 @@ router.post('/trigger', auth, async (req, res) => {
 
     // Notify every trusted contact via your existing Notification system
    
-    const io = req.app.get('io');
+  const io = req.app.get('io');
 
-for (const c of contacts) {
-  const notif = await Notification.create({
-    recipient: c.contact,
-    sender: req.user.userId,
-    type: 'sos',
-    refId: alert._id
-  });
+  const sender = await require('../models/User')
+    .findById(req.user.userId)
+    .select('username avatar');
 
-  await notif.populate('sender', 'username avatar');
+  const notifPromises = contacts.map(async (c) => {
+    const notif = await Notification.create({
+      recipient: c.contact,
+      sender: req.user.userId,
+      type: 'sos',
+      refId: alert._id
+    });
 
-  emitNotification(io, c.contact.toString(), notif);
-}
+    // Emit notification in real time
+    await emitNotification(io, c.contact, notif);
 
-    // Emit socket event immediately
-    // const io = req.app.get('io');
-
+    // Trigger SOS alert event (beep/modal/etc.)
     if (io) {
-      const User = require('../models/User');
-
-      const sender = await User.findById(req.user.userId)
-        .select('username');
-
-      contacts.forEach(c => {
-        io.to(`user:${c.contact}`).emit('sos_alert_triggered', {
-          alertId: alert._id,
-          from: sender.username
-        });
+      io.to(`user:${c.contact}`).emit('sos_alert_triggered', {
+        alertId: alert._id,
+        from: sender.username
       });
     }
+
+    return notif;
+  });
+
+await Promise.all(notifPromises);
 
     res.status(201).json({
       alertId: alert._id,
@@ -169,10 +167,11 @@ router.post('/resolve/:alertId', auth, async (req, res) => {
   }
 });
 // server/routes/sos.routes.js — update /share-location route
-
 router.post('/share-location', auth, async (req, res) => {
   try {
-    const contacts = await TrustedContact.find({ user: req.user.userId });
+    const contacts = await TrustedContact.find({
+      user: req.user.userId
+    });
 
     if (contacts.length === 0) {
       return res.status(400).json({
@@ -187,62 +186,51 @@ router.post('/share-location', auth, async (req, res) => {
       notifiedContacts: contacts.map(c => c.contact)
     });
 
-    // const notificationPromises = contacts.map(c =>
-    //   Notification.create({
-    //     recipient: c.contact,
-    //     sender: req.user.userId,
-    //     type: 'location_share',
-    //     refId: alert._id
-    //   })
-    // );
-    // await Promise.all(notificationPromises);
     const io = req.app.get('io');
 
-for (const c of contacts) {
-  const notif = await Notification.create({
-    recipient: c.contact,
-    sender: req.user.userId,
-    type: 'location_share',
-    refId: alert._id
-  });
+    const sender = await require('../models/User')
+      .findById(req.user.userId)
+      .select('username avatar');
 
-  await notif.populate('sender', 'username avatar');
+    const shareNotifPromises = contacts.map(async (c) => {
+      const notif = await Notification.create({
+        recipient: c.contact,
+        sender: req.user.userId,
+        type: 'location_share',
+        refId: alert._id
+      });
 
-  emitNotification(io, c.contact.toString(), notif);
-}
+      // Real-time notification
+      await emitNotification(io, c.contact, notif);
 
-    // ── Emit directly to each contact's personal socket room ──
-    // This fires IMMEDIATELY — no waiting for GPS updates
-    // const io = req.app.get('io');
-    console.log('io instance exists:', !!io);        // should print: true
-    console.log('Notifying contacts:', contacts.length);
+      // Immediate location-share event
+      if (io) {
+        const room = `user:${c.contact}`;
 
-
-    if (io) {
-      const sender = await require('../models/User')
-        .findById(req.user.userId)
-        .select('username');
-
-      contacts.forEach(c => {
-
-
-
-          const room = `user:${c.contact}`;
-    console.log('Emitting to room:', room);  
-
-
-
+        console.log('Emitting to room:', room);
 
         io.to(room).emit('sos_location_share_started', {
           alertId: alert._id,
           from: sender.username
         });
-      });
-    }
+      }
 
-    res.status(201).json({ alertId: alert._id, notifiedCount: contacts.length });
+      return notif;
+    });
+
+    await Promise.all(shareNotifPromises);
+
+    res.status(201).json({
+      alertId: alert._id,
+      notifiedCount: contacts.length
+    });
+
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    console.error('Share location error:', err);
+
+    res.status(500).json({
+      message: err.message
+    });
   }
 });
 

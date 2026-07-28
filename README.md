@@ -228,9 +228,9 @@ npm run dev   # starts on localhost:5173
 ### 4. Verify everything is running
 ```bash
 # Backend terminal should show:
-✅ Redis connected
-✅ MongoDB connected
-🚀 Server running on port 5000
+ Redis connected
+ MongoDB connected
+ Server running on port 5000
 
 # Open localhost:5173 — register two users in different browsers
 # Send a message — it should appear instantly in both windows
@@ -331,9 +331,5 @@ VITE_API_URL, VITE_SOCKET_URL
 
 ---
 
-## Author
-Shambhavi Mishra
 
----
-##END
 

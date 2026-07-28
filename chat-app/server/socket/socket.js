@@ -21,7 +21,8 @@ const initSocket = (httpServer) => {
       credentials: true
     }
   });
-
+  global._io = io;
+  
   // -------- SOCKET AUTH MIDDLEWARE --------
   io.use((socket, next) => {
     try {
@@ -50,7 +51,7 @@ const initSocket = (httpServer) => {
   // Each user joins a personal room so we can send them direct socket events
   // without going through a chat room
   socket.join(`user:${socket.user.userId}`);
-  console.log(`User connected: ${socket.user.username}`);
+  console.log(`${socket.user.username} joined personal room: user:${socket.user.userId}`);
 
   // Mark user online
   await redis.set(

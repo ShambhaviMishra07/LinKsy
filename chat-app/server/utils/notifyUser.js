@@ -1,13 +1,24 @@
 // server/utils/notifyUser.js
-const emitNotification = (io, recipientId, notification) => {
+
+const emitNotification = async (io, recipientId, notifDoc) => {
   if (!io) return;
+  
+  // Populate sender before emitting so bell shows username immediately
+  let populated = notifDoc;
+  try {
+    populated = await notifDoc.populate('sender', 'username avatar');
+  } catch (e) {
+    // already populated or no populate needed
+  }
+
   io.to(`user:${recipientId}`).emit('new_notification', {
-    _id: notification._id,
-    type: notification.type,
-    sender: notification.sender,
-    refId: notification.refId,
-    createdAt: notification.createdAt,
+    _id: populated._id,
+    type: populated.type,
+    sender: populated.sender,
+    refId: populated.refId,
+    createdAt: populated.createdAt,
     isRead: false
   });
 };
+
 module.exports = emitNotification;

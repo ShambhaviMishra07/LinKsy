@@ -4,7 +4,7 @@
 const Message = require('../../models/Message');
 const Room = require('../../models/Room');
 const redis = require('../../config/redis');
-
+// const globalIO = global._io;
 
 module.exports = (io, socket) => {
 
@@ -20,41 +20,54 @@ module.exports = (io, socket) => {
         type: data.type || 'text'
       });
 
-      const room = await Room.findById(data.roomId);
 
-    if (room) {
-      room.members.forEach(memberId => {
-        const id = memberId.toString();
 
-        if (id !== socket.user.userId) {
-          const current = room.unreadCounts.get(id) || 0;
-          room.unreadCounts.set(id, current + 1);
-        }
-      });
+  const roomDoc = await Room.findById(data.roomId)
+  .populate('members', '_id');
 
-      await room.save();
-      for (const memberId of room.members) {
-    const id = memberId.toString();
+if (roomDoc) {
+  roomDoc.members.forEach(member => {
+    const memberId = member._id
+      ? member._id.toString()
+      : member.toString();
 
-    if (id !== socket.user.userId) {
+    const senderId = socket.user.userId.toString();
+
+    if (memberId !== senderId) {
+      const current = roomDoc.unreadCounts.get(memberId) || 0;
+      roomDoc.unreadCounts.set(memberId, current + 1);
+    }
+  });
+
+  await roomDoc.save();
+
+  roomDoc.members.forEach(async (member) => {
+    const memberId = member._id
+      ? member._id.toString()
+      : member.toString();
+
+    const senderId = socket.user.userId.toString();
+
+    if (memberId !== senderId) {
       const allRooms = await Room.find({
         $or: [
           { isPrivate: false },
-          { isPrivate: true, members: id }
+          { isPrivate: true, members: memberId }
         ]
       });
 
       let total = 0;
 
       allRooms.forEach(r => {
-        total += r.unreadCounts?.get(id) || 0;
+        total += r.unreadCounts?.get(memberId) || 0;
       });
 
-      io.to(`user:${id}`).emit('unread_messages_count', {
-        count: total
-      });
+      io.to(`user:${memberId}`).emit(
+        'unread_messages_count',
+        { count: total }
+      );
     }
-  }
+  });
 }
 
 

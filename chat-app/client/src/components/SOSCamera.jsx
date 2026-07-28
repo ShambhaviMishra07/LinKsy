@@ -1,4 +1,4 @@
-// client/src/components/SOSCamera.jsx
+// client/src/components/SOSCamera.jsx — full updated version
 
 import { useState, useRef, useEffect } from 'react';
 import { useSocket } from '../context/SocketContext';
@@ -6,105 +6,161 @@ import { colors as c } from '../theme';
 
 export default function SOSCamera({ alertId, onStop }) {
   const { socket } = useSocket();
-  const videoRef = useRef(null);       // shows live preview to the sender
-  const streamRef = useRef(null);      // holds the MediaStream object
-  const recorderRef = useRef(null);    // holds the MediaRecorder
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+  const recorderRef = useRef(null);
+  const chunksRef = useRef([]); // store all chunks locally too
   const [recording, setRecording] = useState(false);
-  const [facingMode, setFacingMode] = useState('user'); // 'user'=front, 'environment'=back
-  const [error, setError] = useState('');
+  const [facingMode, setFacingMode] = useState('user');
   const [chunksSent, setChunksSent] = useState(0);
+  const [error, setError] = useState('');
+  const [recordedUrl, setRecordedUrl] = useState(null); // local playback URL
 
+  useEffect(() => {
+    startCamera('user');
+    return () => stopEverything();
+  }, []);
 
-  const startCamera = async (facing = 'user') => {
-    // Stop any existing stream first
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-    }
-
+  const startCamera = async (facing) => {
     try {
-      // getUserMedia requests permission to access camera + microphone
-      // The browser shows a native permission dialog the first time
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+      }
+
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: facing },
         audio: true
       });
 
       streamRef.current = stream;
-
-      // Show live preview in the video element
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
       }
 
       startRecording(stream);
-      setChunksSent(0);
       setRecording(true);
       setError('');
-
     } catch (err) {
-      setError('Camera permission denied. Please allow camera access.');
-      console.error('Camera error:', err);
+      setError('Camera permission denied. Please allow camera access and try again.');
     }
   };
 
   const startRecording = (stream) => {
-    // MediaRecorder captures the stream and fires ondataavailable
-    // with a chunk every 5 seconds — we immediately send each chunk to contacts
-    const recorder = new MediaRecorder(stream, {
-      mimeType: MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-        ? 'video/webm;codecs=vp9'
-        : 'video/webm' // fallback for older browsers
-    });
+    chunksRef.current = [];
+    setRecordedUrl(null);
 
-   recorder.ondataavailable = async (event) => {
-  if (event.data && event.data.size > 0 && socket && alertId) {
-    // Convert blob to ArrayBuffer so it can travel over the socket
-    const buffer = await event.data.arrayBuffer();
+    const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+      ? 'video/webm;codecs=vp9'
+      : 'video/webm';
 
-    socket.emit('sos_video_chunk', {
-      alertId,
-      chunk: buffer,
-      timestamp: new Date()
-    });
+    const recorder = new MediaRecorder(stream, { mimeType });
 
-    setChunksSent(prev => prev + 1);
-  }
-};
+    recorder.ondataavailable = async (event) => {
+      if (event.data && event.data.size > 0) {
+        // Store locally
+        chunksRef.current.push(event.data);
 
-    // timeslice: 5000 = fire ondataavailable every 5 seconds
+        // Send to trusted contacts via socket
+        if (socket && alertId) {
+          const buffer = await event.data.arrayBuffer();
+          socket.emit('sos_video_chunk', {
+            alertId,
+            chunk: buffer,
+            timestamp: new Date(),
+            mimeType
+          });
+          setChunksSent(prev => prev + 1);
+        }
+      }
+    };
+
+    // Fire ondataavailable every 5 seconds
     recorder.start(5000);
     recorderRef.current = recorder;
   };
 
-  const stopCamera = () => {
-    if (recorderRef.current) {
+  const stopEverything = () => {
+    if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+      // Request final chunk before stopping
+      recorderRef.current.requestData();
       recorderRef.current.stop();
-      recorderRef.current = null;
+
+      // After stopping, create a local playback URL from all collected chunks
+      recorderRef.current.onstop = () => {
+        if (chunksRef.current.length > 0) {
+          const blob = new Blob(chunksRef.current, { type: 'video/webm' });
+          const url = URL.createObjectURL(blob);
+          setRecordedUrl(url);
+          setRecording(false);
+        }
+      };
     }
+
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
     }
-    setRecording(false);
+  };
+
+  const handleStop = () => {
+    stopEverything();
+    // Don't call onStop immediately — wait for onstop to fire and show the recording
+  };
+
+  const handleDiscard = () => {
+    setRecordedUrl(null);
+    chunksRef.current = [];
     if (onStop) onStop();
+  };
+
+  const handleDownload = () => {
+    if (!recordedUrl) return;
+    const a = document.createElement('a');
+    a.href = recordedUrl;
+    a.download = `linksy-sos-${Date.now()}.webm`;
+    a.click();
   };
 
   const switchCamera = async () => {
     const newFacing = facingMode === 'user' ? 'environment' : 'user';
     setFacingMode(newFacing);
-
-    // Stop current recorder cleanly before switching
-    if (recorderRef.current) {
-      recorderRef.current.stop();
-    }
-
+    if (recorderRef.current) recorderRef.current.stop();
     await startCamera(newFacing);
   };
 
-  useEffect(() => {
-    startCamera(facingMode);
-    return () => stopCamera();
-  }, []);
+  // Show recorded video playback after stopping
+  if (recordedUrl) {
+    return (
+      <div style={{ background: '#000', borderRadius: 16, overflow: 'hidden' }}>
+        <video
+          src={recordedUrl}
+          controls
+          style={{ width: '100%', display: 'block' }}
+        />
+        <div style={{ display: 'flex', gap: 10, padding: 12 }}>
+          <button
+            onClick={handleDownload}
+            style={{
+              flex: 1, padding: '10px 0', borderRadius: 10, border: 'none',
+              background: c.pink, color: '#fff', fontSize: 13,
+              fontWeight: 500, cursor: 'pointer'
+            }}
+          >
+            💾 Save video
+          </button>
+          <button
+            onClick={handleDiscard}
+            style={{
+              flex: 1, padding: '10px 0', borderRadius: 10,
+              border: `1px solid ${c.border}`, background: 'transparent',
+              color: c.textPrimary, fontSize: 13, cursor: 'pointer'
+            }}
+          >
+            Discard
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ background: '#000', borderRadius: 16, overflow: 'hidden', position: 'relative' }}>
@@ -117,47 +173,28 @@ export default function SOSCamera({ alertId, onStop }) {
           <video
             ref={videoRef}
             autoPlay
-            muted     // muted for the sender's preview — audio still records
+            muted
             playsInline
-            style={{ width: '100%', aspectRatio: '9/16', objectFit: 'cover', display: 'block' }}
+            style={{ width: '100%', aspectRatio: '4/3', objectFit: 'cover', display: 'block' }}
           />
 
-          {/* Recording indicator */}
           {recording && (
-  <div
-    style={{
-      position: 'absolute',
-      top: 12,
-      left: 12,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 6,
-      background: 'rgba(0,0,0,0.6)',
-      borderRadius: 8,
-      padding: '4px 10px'
-    }}
-  >
-    <div
-      style={{
-        width: 8,
-        height: 8,
-        borderRadius: '50%',
-        background: c.danger
-      }}
-    />
-    <span
-      style={{
-        color: '#fff',
-        fontSize: 12,
-        fontWeight: 500
-      }}
-    >
-      LIVE · {chunksSent} chunk{chunksSent !== 1 ? 's' : ''} sent
-    </span>
-  </div>
-)}
+            <div style={{
+              position: 'absolute', top: 12, left: 12,
+              display: 'flex', alignItems: 'center', gap: 6,
+              background: 'rgba(0,0,0,0.65)', borderRadius: 8, padding: '4px 10px'
+            }}>
+              <div style={{
+                width: 8, height: 8, borderRadius: '50%',
+                background: c.danger,
+                animation: 'pulse 1s infinite'
+              }} />
+              <span style={{ color: '#fff', fontSize: 12, fontWeight: 500 }}>
+                REC · {chunksSent} chunk{chunksSent !== 1 ? 's' : ''} sent
+              </span>
+            </div>
+          )}
 
-          {/* Controls */}
           <div style={{
             position: 'absolute', bottom: 16, left: 0, right: 0,
             display: 'flex', justifyContent: 'space-around', alignItems: 'center'
@@ -173,7 +210,7 @@ export default function SOSCamera({ alertId, onStop }) {
               🔄
             </button>
             <button
-              onClick={stopCamera}
+              onClick={handleStop}
               style={{
                 width: 56, height: 56, borderRadius: '50%',
                 background: c.danger, border: 'none',

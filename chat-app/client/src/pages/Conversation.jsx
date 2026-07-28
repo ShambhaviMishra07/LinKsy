@@ -26,6 +26,8 @@ export default function Conversation() {
 useEffect(() => {
   if (!socket || !isConnected || !roomId) return;
 
+  console.log('Joining room:', roomId); // confirm this fires
+
   socket.emit('join_room', roomId);
   socket.emit('mark_seen', roomId);
 
@@ -38,7 +40,7 @@ useEffect(() => {
       const { data } = await api.get(`/messages/${roomId}`);
       setMessages(data.messages || []);
     } catch (err) {
-      console.error(err);
+      console.error('History error:', err.message);
     }
   };
 
@@ -49,40 +51,60 @@ useEffect(() => {
   };
 }, [socket, isConnected, roomId]);
   // ── Socket listeners ──
-  useEffect(() => {
-    if (!socket) return;
+ // client/src/pages/Conversation.jsx — update the socket listener useEffect
 
-    const onMessage = (message) => {
-      if (message.room === roomId) {
-        setMessages(prev => [...prev, message]);
-        socket.emit('mark_seen', roomId);
+useEffect(() => {
+  if (!socket) return;
+
+  const onMessage = (message) => {
+    // Convert both to string for reliable comparison
+    const messageRoom = message.room?._id?.toString() || message.room?.toString() || message.room;
+    const currentRoom = roomId?.toString();
+
+    if (messageRoom === currentRoom) {
+      setMessages(prev => {
+        // Prevent duplicate messages
+        const exists = prev.some(m => m._id?.toString() === message._id?.toString());
+        if (exists) return prev;
+        return [...prev, message];
+      });
+      // Mark as read immediately since we're viewing this room
+      api.post(`/rooms/${roomId}/read`).catch(console.error);
+    }
+  };
+
+  const onMessagesSeen = ({ seenBy }) => {
+    const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+    setMessages(prev => prev.map(msg => {
+      const senderId = msg.sender?._id?.toString() || msg.sender?.toString();
+      if (senderId === (currentUser.id || currentUser._id)?.toString()) {
+        const alreadySeen = (msg.seenBy || []).some(id => id.toString() === seenBy.toString());
+        if (!alreadySeen) {
+          return { ...msg, seenBy: [...(msg.seenBy || []), seenBy] };
+        }
       }
-    };
+      return msg;
+    }));
+  };
 
-    const onMessagesSeen = ({ seenBy }) => {
-      setMessages(prev => prev.map(msg =>
-        msg.sender?._id === user.id
-          ? { ...msg, seenBy: [...(msg.seenBy || []), seenBy] }
-          : msg
-      ));
-    };
+  const onTyping = ({ username }) => setTypingUser(`${username} is typing...`);
+  const onStopTyping = () => setTypingUser('');
+  const onError = (err) => console.error('Socket error:', err);
 
-    const onTyping = ({ username }) => setTypingUser(`${username} is typing...`);
-    const onStopTyping = () => setTypingUser('');
+  socket.on('receive_message', onMessage);
+  socket.on('messages_seen', onMessagesSeen);
+  socket.on('user_typing', onTyping);
+  socket.on('user_stopped_typing', onStopTyping);
+  socket.on('error', onError);
 
-    socket.on('receive_message', onMessage);
-    socket.on('messages_seen', onMessagesSeen);
-    socket.on('user_typing', onTyping);
-    socket.on('user_stopped_typing', onStopTyping);
-
-    return () => {
-      socket.off('receive_message', onMessage);
-      socket.off('messages_seen', onMessagesSeen);
-      socket.off('user_typing', onTyping);
-      socket.off('user_stopped_typing', onStopTyping);
-    };
-  }, [socket, roomId]);
-
+  return () => {
+    socket.off('receive_message', onMessage);
+    socket.off('messages_seen', onMessagesSeen);
+    socket.off('user_typing', onTyping);
+    socket.off('user_stopped_typing', onStopTyping);
+    socket.off('error', onError);
+  };
+}, [socket, roomId]); // roomId in deps so it re-registers when switching rooms
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
