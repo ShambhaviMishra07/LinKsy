@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # LinKsy 
 
 > **A full-stack social platform with real-time communication and an integrated women's safety SOS system.**
@@ -13,23 +13,6 @@
 
 ---
 
-=======
-# LinKsy 🌸
-
-> **A full-stack social platform with real-time communication and an integrated women's safety SOS system.**
->>>>>>> d0d3a05 (implemented forgot password system)
-
-[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat&logo=node.js&logoColor=white)](https://nodejs.org)
-[![Socket.io](https://img.shields.io/badge/Socket.io-4.x-010101?style=flat&logo=socket.io)](https://socket.io)
-[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat&logo=mongodb&logoColor=white)](https://mongodb.com)
-[![Redis](https://img.shields.io/badge/Redis-Upstash-DC382D?style=flat&logo=redis&logoColor=white)](https://upstash.com)
-[![Deployed on Vercel](https://img.shields.io/badge/Frontend-Vercel-000000?style=flat&logo=vercel)](https://vercel.com)
-[![Deployed on Render](https://img.shields.io/badge/Backend-Render-46E3B7?style=flat&logo=render)](https://render.com)
-
----
-
-<<<<<<< HEAD
 ## What is LinKsy?
 
 LinKsy is a production-grade social media platform inspired by Instagram, built entirely from scratch using the MERN stack. It combines everything you'd expect from a modern social app — posts, stories, follows, real-time chat — with something no other social platform offers: a **built-in four-phase women's safety SOS system** accessible at any moment from the top of the screen.
@@ -109,8 +92,6 @@ Additional SOS features:
 
 ---
 
-## Tech Stack
-=======
 ## 📸 Screenshots
 
 > Replace the placeholder paths below with your actual screenshot files.
@@ -134,16 +115,6 @@ Additional SOS features:
 >    `home.png`, `profile.png`, `chat.png`, `sos.png`, `moments.png`, `login.png`
 > 3. Commit and push — GitHub will render them automatically.
 
----
-
-## 🌟 What is LinKsy?
-
-LinKsy is a production-grade social media platform inspired by Instagram, built entirely from scratch using the MERN stack. It combines everything you'd expect from a modern social app — posts, stories, follows, real-time chat — with something no other social platform offers: a **built-in four-phase women's safety SOS system** accessible at any moment from the top of the screen.
-
-**Live Demo:** [linksy.vercel.app](https://linksy.vercel.app)  
-**Backend Health Check:** [linksy-server.onrender.com/health](https://linksy-server.onrender.com/health)
-
-> ⚠️ The backend is hosted on Render's free tier which spins down after 15 minutes of inactivity. The first request after inactivity may take 30–60 seconds to wake up. This is expected behaviour on the free tier.
 
 ---
 
@@ -304,9 +275,6 @@ Additional SOS features:
   │    linksy/moments/     │
   │    linksy/chat/        │
   └────────────────────────┘
-```
-=======
->>>>>>> d0d3a05 (implemented forgot password system)
 
 ---
 
@@ -732,33 +700,6 @@ Server → Client:
 
 ---
 
-<<<<<<< HEAD
-## 🔑 Key Technical Decisions Explained
-
-=======
-## 🎨 Design System
-
-**Color palette — pink and black with warm neutrals:**
-
-```js
-// theme.js
-colors = {
-  bg:           '#0E0E10',   // deep charcoal — main background
-  surface:      '#18181A',   // card and panel surfaces
-  surfaceLight: '#222224',   // hover states
-  border:       '#2C2C2A',   // subtle dividers
-  pink:         '#D4537E',   // primary pink accent
-  pinkLight:    '#ED93B1',   // lighter pink for active icons and links
-  pinkPale:     '#F4C0D1',   // palest pink for logo and avatar text
-  pinkDark:     '#993556',   // dark pink for avatar backgrounds
-  textPrimary:  '#F1EFE8',   // warm white for primary text
-  textSecondary:'#B4B2A9',   // slightly dimmed text
-  textMuted:    '#888780',   // placeholder and label text
-  danger:       '#E24B4A',   // SOS red for alerts and errors
-  success:      '#5DCAA5'    // teal green for live indicators
-}
-```
-
 **Icon system — @tabler/icons-react (outline, stroke 1.6):**
 
 | Icon | Usage |
@@ -794,7 +735,6 @@ The receiver-side beep must fire regardless of which page the contact is on. `SO
 
 ---
 
-<<<<<<< HEAD
 =======
 ## 🐛 Known Issues
 
@@ -849,19 +789,11 @@ The receiver-side beep must fire regardless of which page the contact is on. `SO
 ---
 
 ## 👩‍💻 Author
-<<<<<<< HEAD
 
 **Shambhavi Mishra**
 
 - Github: https://github.com/ShambhaviMishra07
 - LinkedIn: https://www.linkedin.com/in/shambhavimis02shra
-=======
-
-**Shambhavi Mishra**
-
-- GitHub: (https://github.com/ShambhaviMishra07)
-
->>>>>>> d0d3a05 (implemented forgot password system)
 
 ---
 
@@ -885,15 +817,3 @@ MIT License — feel free to use this project as a reference or learning resourc
 *Built with 💗 as a portfolio project demonstrating full-stack engineering, real-time systems, cloud integration, and safety-first product design.*
 
 
-## 🙏 Acknowledgements
-
-- [Socket.io](https://socket.io) — for making real-time WebSocket development approachable
-- [Tabler Icons](https://tabler.io/icons) — for the beautiful, consistent outline icon set
-- [OpenStreetMap + Overpass API](https://overpass-api.de) — for completely free geospatial data requiring no API key
-- [Upstash](https://upstash.com) — for serverless Redis that works seamlessly on free tier
-- [Cloudinary](https://cloudinary.com) — for generous free-tier cloud media storage
-- [Vercel](https://vercel.com) and [Render](https://render.com) — for free hosting that makes production deployment accessible to students
-
----
-
-*Built with 💗 as a portfolio project demonstrating full-stack engineering, real-time systems, cloud integration, and safety-first product design.*
