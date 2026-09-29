@@ -35,6 +35,15 @@ router.post('/:postId', auth, async (req, res) => {
     // Increment commentsCount on the post
     await Post.findByIdAndUpdate(req.params.postId, { $inc: { commentsCount: 1 } });
 
+    const io = req.app.get('io');
+
+    io.emit('comment_added', {
+      postId: req.params.postId
+    });
+
+    io.emit('feed_updated');
+
+
     res.status(201).json(comment);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -51,6 +60,15 @@ router.delete('/:commentId', auth, async (req, res) => {
     }
     await comment.deleteOne();
     await Post.findByIdAndUpdate(comment.post, { $inc: { commentsCount: -1 } });
+
+    const io = req.app.get('io');
+
+    io.emit('comment_added', {
+      postId: comment.post
+    });
+
+    io.emit('feed_updated');
+    
     res.json({ message: 'Deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });

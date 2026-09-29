@@ -10,9 +10,12 @@ import BottomNav from '../components/BottomNav';
 import NotificationBell from '../components/NotificationBell';
 import SOSPill from '../components/SOSPill';
 import PostCard from '../components/PostCard';
+import { useSocket } from '../context/SocketContext';
+
 
 export default function Home() {
   const navigate = useNavigate();
+  const { socket } = useSocket();
   const [posts, setPosts] = useState([]);
   const [momentGroups, setMomentGroups] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,11 +23,58 @@ export default function Home() {
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
 
+  
+
  useEffect(() => {
   loadMoments();
   loadMyMoments();
   loadFeed();
 }, []);
+
+
+// useEffect(() => {
+//   if (!socket) return;
+
+//   const onNewPost = (post) => {
+//     console.log('📢 New post received:', post);
+
+//     setPosts(prev => {
+//       const exists = prev.some(p => p._id === post._id);
+//       if (exists) return prev;
+//       return [post, ...prev];
+//     });
+//   };
+
+//   socket.on('new_post', onNewPost);
+
+//   return () => {
+//     socket.off('new_post', onNewPost);
+//   };
+// }, [socket]);
+
+useEffect(() => {
+  if (!socket) return;
+
+  const refreshHome = () => {
+    console.log("Refreshing Home...");
+    loadFeed();
+    loadMoments();
+    loadMyMoments();
+  };
+
+  socket.on("feed_updated", refreshHome);
+  socket.on("moment_created", refreshHome);
+  socket.on("post_liked", refreshHome);
+  socket.on("comment_added", refreshHome);
+
+  return () => {
+    socket.off("feed_updated", refreshHome);
+    socket.off("moment_created", refreshHome);
+    socket.off("post_liked", refreshHome);
+    socket.off("comment_added", refreshHome);
+  };
+}, [socket]);
+
 
 
 const loadMoments = async () => {

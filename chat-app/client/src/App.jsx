@@ -23,6 +23,8 @@ import FollowingList from './pages/FollowingList';
 import MomentViewer from './pages/MomentViewer';
 import VerifyEmail from './pages/VerifyEmail';
 import OTPVerify from './pages/OTPVerify';
+import ForgotPassword from './pages/ForgotPassword';
+
 
 
 const ProtectedRoute = ({ children }) => {
@@ -143,7 +145,8 @@ useEffect(() => {
       <Route path="/verify-email" element={<VerifyEmail />} />
 
       <Route path="/verify-otp" element={<OTPVerify />} />
-      
+
+      <Route path="/forgot-password" element={<ForgotPassword />} />
     </Routes>
   );
 }

@@ -95,4 +95,39 @@ const otpTemplate = (username, otp) => `
 </html>
 `;
 
-module.exports = { verificationTemplate, otpTemplate };
+
+// Add to emailTemplates.js
+
+const resetPasswordTemplate = (username, code) => `
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+<body style="margin:0;padding:0;background:#0E0E10;font-family:'Segoe UI',sans-serif;">
+  <div style="max-width:520px;margin:40px auto;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:20px;overflow:hidden;">
+    <div style="background:linear-gradient(135deg,#D4537E,#993556);padding:32px;text-align:center;">
+      <div style="font-size:28px;font-weight:300;color:#F4C0D1;letter-spacing:1px;">
+        lin<span style="font-weight:600;color:#fff;">K</span>sy
+      </div>
+    </div>
+    <div style="padding:36px 32px;">
+      <h2 style="color:#F1EFE8;font-size:22px;font-weight:600;margin:0 0 10px;">Reset your password 🔑</h2>
+      <p style="color:#B4B2A9;font-size:14px;line-height:1.7;margin:0 0 28px;">
+        Hi <strong style="color:#ED93B1;">${username}</strong>,<br><br>
+        Use this code to reset your password. It expires in <strong style="color:#F1EFE8;">15 minutes</strong>.
+      </p>
+      <div style="text-align:center;margin:32px 0;">
+        <div style="display:inline-block;background:rgba(212,83,126,0.15);border:2px solid #D4537E;border-radius:16px;padding:20px 40px;">
+          <div style="font-size:40px;font-weight:700;letter-spacing:12px;color:#ED93B1;">${code}</div>
+        </div>
+      </div>
+      <p style="color:#888780;font-size:12px;line-height:1.6;margin:0;text-align:center;">
+        If you didn't request a password reset, ignore this email.<br>
+        Your password will not change.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+`;
+
+module.exports = { verificationTemplate, otpTemplate, resetPasswordTemplate };

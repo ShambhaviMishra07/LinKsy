@@ -96,14 +96,15 @@ router.post('/trigger', auth, async (req, res) => {
 
   const notifPromises = contacts.map(async (c) => {
     const notif = await Notification.create({
-      recipient: c.contact,
-      sender: req.user.userId,
-      type: 'sos',
-      refId: alert._id
-    });
+  recipient: c.contact,
+  sender: req.user.userId,
+  type: 'sos',
+  refId: alert._id
+});
 
-    // Emit notification in real time
-    await emitNotification(io, c.contact, notif);
+await notif.populate('sender', 'username avatar');
+
+emitNotification(io, c.contact, notif);
 
     // Trigger SOS alert event (beep/modal/etc.)
     if (io) {
@@ -193,15 +194,16 @@ router.post('/share-location', auth, async (req, res) => {
       .select('username avatar');
 
     const shareNotifPromises = contacts.map(async (c) => {
-      const notif = await Notification.create({
-        recipient: c.contact,
-        sender: req.user.userId,
-        type: 'location_share',
-        refId: alert._id
-      });
+     const notif = await Notification.create({
+    recipient: c.contact,
+    sender: req.user.userId,
+    type: 'location_share',
+    refId: alert._id
+  });
 
-      // Real-time notification
-      await emitNotification(io, c.contact, notif);
+  await notif.populate('sender', 'username avatar');
+
+  emitNotification(io, c.contact, notif);
 
       // Immediate location-share event
       if (io) {

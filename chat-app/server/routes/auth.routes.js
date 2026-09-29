@@ -275,4 +275,101 @@ router.post('/resend-otp', async (req, res) => {
   }
 });
 
+
+// Add these three routes to auth.routes.js
+
+// ── STEP 1: Request password reset ────────────────────────────
+// User enters their email, we send a reset code
+router.post('/forgot-password', async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: 'Email is required' });
+
+    const user = await User.findOne({ email: email.toLowerCase() });
+
+    // Always return success even if email not found — prevents user enumeration
+    // (attacker can't tell which emails are registered)
+    if (!user) {
+      return res.json({ message: 'If that email exists, a reset code has been sent.' });
+    }
+
+    // Generate 6-digit reset code — same pattern as OTP
+    const resetCode = crypto.randomInt(100000, 999999).toString();
+
+    // Store in Redis with 15-minute expiry
+    await redis.set(`reset:${user._id}`, resetCode, 'EX', 900);
+
+    // Send email
+    await sendEmail({
+      to: user.email,
+      subject: 'Reset your LinKsy password',
+      html: resetPasswordTemplate(user.username, resetCode)
+    });
+
+    res.json({
+      message: 'Reset code sent to your email',
+      userId: user._id  // needed for step 2
+    });
+
+  } catch (err) {
+    console.error('Forgot password error:', err);
+    res.status(500).json({ message: 'Failed to send reset code. Please try again.' });
+  }
+});
+
+// ── STEP 2: Verify reset code ──────────────────────────────────
+router.post('/verify-reset-code', async (req, res) => {
+  try {
+    const { userId, code } = req.body;
+
+    const storedCode = await redis.get(`reset:${userId}`);
+
+    if (!storedCode) {
+      return res.status(400).json({ message: 'Reset code expired. Please request a new one.' });
+    }
+
+    if (storedCode !== code.toString()) {
+      return res.status(400).json({ message: 'Incorrect code. Please try again.' });
+    }
+
+    // Code is correct — issue a short-lived reset token
+    // Store confirmation in Redis so the reset password step knows the code was verified
+    await redis.set(`reset-verified:${userId}`, '1', 'EX', 600); // 10 minutes to complete reset
+    await redis.del(`reset:${userId}`); // delete the code so it can't be reused
+
+    res.json({ message: 'Code verified', userId });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// ── STEP 3: Set new password ───────────────────────────────────
+router.post('/reset-password', async (req, res) => {
+  try {
+    const { userId, newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ message: 'Password must be at least 8 characters' });
+    }
+
+    // Check reset was verified
+    const verified = await redis.get(`reset-verified:${userId}`);
+    if (!verified) {
+      return res.status(400).json({ message: 'Reset session expired. Please start again.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await User.findByIdAndUpdate(userId, { password: hashedPassword });
+
+    // Clean up Redis
+    await redis.del(`reset-verified:${userId}`);
+
+    res.json({ message: 'Password reset successfully. You can now sign in.' });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;

@@ -1,10 +1,10 @@
 // client/src/pages/Login.jsx
 
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
 import { useSocket } from '../context/SocketContext';
-import { useSearchParams } from 'react-router-dom';
+
 
 
 // Import the shared components from Register.jsx
@@ -138,7 +138,7 @@ const handleSubmit = async (evt) => {
   </div>
 )}
 
-<form onSubmit={handleSubmit}></form>
+{/* <form onSubmit={handleSubmit}></form> */}
 
         <form onSubmit={handleSubmit}>
           <div style={{ marginBottom: 16 }}>
@@ -183,8 +183,17 @@ const handleSubmit = async (evt) => {
           </div>
 
           <div style={{ textAlign: 'right', marginBottom: 24 }}>
-            <span style={{ fontSize: 12, color: '#ED93B1', cursor: 'pointer' }}>Forgot password?</span>
-          </div>
+        <span
+          onClick={() => navigate('/forgot-password')}
+          style={{
+            fontSize: 12,
+            color: '#ED93B1',
+            cursor: 'pointer'
+          }}
+        >
+          Forgot password?
+        </span>
+      </div>
 
           <button
             type="submit"

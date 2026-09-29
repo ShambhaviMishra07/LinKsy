@@ -29,6 +29,11 @@ router.post('/', auth, upload.single('media'), async (req, res) => {
 
     await post.populate('author', 'username avatar');
 
+    const io = req.app.get('io');
+
+   io.emit('new_post', post);
+
+
     // Update post count indirectly — profile route counts dynamically
     res.status(201).json(post);
   } catch (err) {
@@ -80,6 +85,16 @@ router.post('/:postId/like', auth, async (req, res) => {
     }
 
     await post.save();
+
+    const io = req.app.get('io');
+
+    io.emit('post_updated', {
+      postId: post._id,
+      likes: post.likes,
+      likesCount: post.likes.length
+    });
+
+
     res.json({ liked: !alreadyLiked, likesCount: post.likes.length });
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -95,6 +110,10 @@ router.delete('/:postId', auth, async (req, res) => {
       return res.status(403).json({ message: 'Not authorized' });
     }
     await post.deleteOne();
+
+    const io = req.app.get('io');
+
+   io.emit('post_deleted', req.params.postId);
     res.json({ message: 'Post deleted' });
   } catch (err) {
     res.status(500).json({ message: err.message });

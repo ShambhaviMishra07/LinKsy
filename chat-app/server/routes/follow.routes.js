@@ -47,17 +47,16 @@ router.post('/:targetUserId', auth, async (req, res) => {
   });
 
   // Notify user that someone followed them
-const io = req.app.get('io');
+  const io = req.app.get('io');
 
-const notif = await Notification.create({
-  recipient: targetId,
-  sender: myId,
-  type: 'follow'
-});
+  const notif = await Notification.create({
+    recipient: targetId,
+    sender: myId,
+    type: 'follow'
+  });
 
-await notif.populate('sender', 'username avatar');
-
-emitNotification(io, targetId, notif);
+  await notif.populate('sender', 'username avatar');
+  emitNotification(io, targetId, notif);
 
   return res.status(201).json({
     status: 'accepted',
@@ -100,7 +99,6 @@ const notif = await Notification.create({
 });
 
 await notif.populate('sender', 'username avatar');
-
 emitNotification(io, targetId, notif);
 
 res.status(201).json({
@@ -153,14 +151,13 @@ router.post('/requests/:requestId/accept', auth, async (req, res) => {
     const io = req.app.get('io');
 
     const notif = await Notification.create({
-      recipient: request.from,
-      sender: request.to,
-      type: 'follow_accepted'
-    });
+  recipient: request.from,
+  sender: request.to,
+  type: 'follow_accepted'
+});
 
-    await notif.populate('sender', 'username avatar');
-
-    emitNotification(io, request.from, notif);
+await notif.populate('sender', 'username avatar');
+emitNotification(io, request.from, notif);
 
     res.json({
       message: 'Follow request accepted'

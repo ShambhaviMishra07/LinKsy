@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # LinKsy 
 
 > **A full-stack social platform with real-time communication and an integrated women's safety SOS system.**
@@ -12,10 +13,23 @@
 
 ---
 
+=======
+# LinKsy 🌸
 
+> **A full-stack social platform with real-time communication and an integrated women's safety SOS system.**
+>>>>>>> d0d3a05 (implemented forgot password system)
+
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat&logo=react&logoColor=black)](https://react.dev)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?style=flat&logo=node.js&logoColor=white)](https://nodejs.org)
+[![Socket.io](https://img.shields.io/badge/Socket.io-4.x-010101?style=flat&logo=socket.io)](https://socket.io)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-47A248?style=flat&logo=mongodb&logoColor=white)](https://mongodb.com)
+[![Redis](https://img.shields.io/badge/Redis-Upstash-DC382D?style=flat&logo=redis&logoColor=white)](https://upstash.com)
+[![Deployed on Vercel](https://img.shields.io/badge/Frontend-Vercel-000000?style=flat&logo=vercel)](https://vercel.com)
+[![Deployed on Render](https://img.shields.io/badge/Backend-Render-46E3B7?style=flat&logo=render)](https://render.com)
 
 ---
 
+<<<<<<< HEAD
 ## What is LinKsy?
 
 LinKsy is a production-grade social media platform inspired by Instagram, built entirely from scratch using the MERN stack. It combines everything you'd expect from a modern social app — posts, stories, follows, real-time chat — with something no other social platform offers: a **built-in four-phase women's safety SOS system** accessible at any moment from the top of the screen.
@@ -96,6 +110,113 @@ Additional SOS features:
 ---
 
 ## Tech Stack
+=======
+## 📸 Screenshots
+
+> Replace the placeholder paths below with your actual screenshot files.
+> Create a `screenshots/` folder in the root of your project and add images named as shown.
+
+| Home Feed | Profile Page |
+|:---:|:---:|
+| ![Home Feed](./screenshots/home.png) | ![Profile](./screenshots/profile.png) |
+
+| Real-Time Chat | SOS Safety Screen |
+|:---:|:---:|
+| ![Chat](./screenshots/chat.png) | ![SOS](./screenshots/sos.png) |
+
+| Moments (Stories) | Login Page |
+|:---:|:---:|
+| ![Moments](./screenshots/moments.png) | ![Login](./screenshots/login.png) |
+
+> 📁 **How to add your screenshots:**
+> 1. Create a folder called `screenshots` in the root of your project (same level as `server/` and `client/`).
+> 2. Take screenshots of your running app and save them with these exact filenames:
+>    `home.png`, `profile.png`, `chat.png`, `sos.png`, `moments.png`, `login.png`
+> 3. Commit and push — GitHub will render them automatically.
+
+---
+
+## 🌟 What is LinKsy?
+
+LinKsy is a production-grade social media platform inspired by Instagram, built entirely from scratch using the MERN stack. It combines everything you'd expect from a modern social app — posts, stories, follows, real-time chat — with something no other social platform offers: a **built-in four-phase women's safety SOS system** accessible at any moment from the top of the screen.
+
+**Live Demo:** [linksy.vercel.app](https://linksy.vercel.app)  
+**Backend Health Check:** [linksy-server.onrender.com/health](https://linksy-server.onrender.com/health)
+
+> ⚠️ The backend is hosted on Render's free tier which spins down after 15 minutes of inactivity. The first request after inactivity may take 30–60 seconds to wake up. This is expected behaviour on the free tier.
+
+---
+
+## ✨ Features
+
+### 🔐 Authentication and Security
+- Email verification on registration — accounts cannot log in until the email link is clicked
+- **Two-Factor Authentication (2FA)** — a 6-digit OTP is emailed on every login attempt
+- JWT-based stateless authentication for all REST routes and WebSocket connections
+- bcrypt password hashing with 10 salt rounds
+- Private account mode — requires follow approval before content or messages are visible
+- WebSocket connections authenticated via JWT in the Socket.io handshake
+
+### 👥 Social Graph
+- Follow request system with pending / accepted / rejected states
+- Public accounts auto-accept follows; private accounts require manual approval from a requests inbox
+- Mutual follow detection — messaging is gated by relationship status
+- Message request inbox — messages from non-mutual followers are held separately until approved
+- Discover page to find and follow other users
+- Followers and following list pages with real-time counts
+
+### 💬 Real-Time Messaging
+- Instant message delivery via Socket.io WebSockets (under 50ms average)
+- Typing indicators with Redis TTL auto-expiry (3 seconds) — clears automatically if browser crashes
+- Read receipts (✓ sent → ✓✓ seen by recipient)
+- Image sharing inside chat via Cloudinary
+- Real-time unread message badge on the Messages nav icon
+- Message history served from Redis cache for instant load on room open
+- Search users directly from the Messages inbox
+
+### 📸 Posts and Feed
+- Upload photos and videos with captions up to 2200 characters
+- Home feed shows posts only from people you follow, newest first
+- Like posts using the flower icon (custom doodle icon system)
+- Comments via a slide-up sheet (Instagram-style bottom panel)
+- Delete your own posts directly from the profile grid
+- Post grid on profile page (3 columns)
+
+### ⭕ Moments (Stories)
+- 24-hour expiring stories using MongoDB TTL index — no deletion code needed, database handles it automatically
+- Full-screen viewer with animated progress bar and tap-to-advance
+- Seen/unseen ring indicator — pink gradient ring means you haven't viewed it yet
+- Stories row on home page shows your ring and all people you follow who have active moments
+- Tap your own ring to view your active moment, or add a new one
+
+### 🔔 Real-Time Notifications
+- Notification bell updates instantly without any page refresh
+- Powered by Socket.io personal rooms (`user:{id}`) — server pushes directly to the right device
+- Notification types: follow, follow request, follow accepted, SOS alert, location share started
+- Unread count badge on the bell icon
+- Clicking a notification routes to the relevant page (requests inbox, profile, tracking page)
+
+### 🚨 SOS Safety System
+
+| Phase | Feature | How It Works |
+|---|---|---|
+| 1 — Alarm | Loud siren on device | Web Audio API oscillator, sawtooth wave, 600Hz–1400Hz continuous sweep |
+| 2 — Location | Live GPS to trusted contacts | `Geolocation.watchPosition` streams coordinates over Socket.io |
+| 3 — Camera | Real-time video recording | `MediaRecorder` captures 5-second chunks sent as ArrayBuffers over socket |
+| 4 — Map | Nearby safety places | Overpass API queries OpenStreetMap for hospitals and police within 1.5km |
+
+Additional SOS features:
+- Trusted contacts management — choose exactly who gets alerted
+- Receiver-side 5-second double-beep plays on the contact's device on **any page** (global App-level listener)
+- Real-time notification the moment SOS or location share is triggered — no refresh needed
+- One-tap Google Maps walking directions to the nearest hospital or police station
+- "I'm safe" button stops the alarm, clears the GPS watcher, and resolves the alert in the database
+- Share location can be used silently without the alarm — for quietly letting someone know where you are
+
+---
+
+## 🛠️ Tech Stack
+>>>>>>> d0d3a05 (implemented forgot password system)
 
 ### Frontend
 | Technology | Purpose |
@@ -136,6 +257,7 @@ Additional SOS features:
 | Vercel (free tier) | Frontend hosting with global edge network |
 | Render (free tier) | Backend hosting with WebSocket support |
 | Gmail SMTP | Email delivery — free, reliable, no third-party service |
+<<<<<<< HEAD
 
 ---
 
@@ -183,10 +305,59 @@ Additional SOS features:
   │    linksy/chat/        │
   └────────────────────────┘
 ```
+=======
+>>>>>>> d0d3a05 (implemented forgot password system)
 
 ---
 
-## Project Structure
+## 🏗️ Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   CLIENT  (React + Vite → Vercel)               │
+│  SocketContext wraps the entire app with one persistent socket   │
+│  Global SOS listeners in App.jsx fire beep on any page          │
+└──────────────────┬──────────────────────────┬───────────────────┘
+                   │  REST API (Axios + JWT)   │  WebSocket (Socket.io)
+                   ▼                           ▼
+┌─────────────────────────────────────────────────────────────────┐
+│              SERVER  (Express + Socket.io → Render)              │
+│  auth.middleware.js verifies JWT on every REST request           │
+│  Socket.io middleware verifies JWT on every WS connection        │
+│  Each user joins personal room  user:{userId}  on connect        │
+│  Chat rooms identified by MongoDB Room _id                       │
+└──────────────┬────────────────────────────┬─────────────────────┘
+               │                            │
+               ▼                            ▼
+  ┌────────────────────────┐    ┌──────────────────────────────┐
+  │    MongoDB Atlas       │    │    Redis  (Upstash)          │
+  │    11 collections      │    │                              │
+  │    • users             │    │  room:messages:{id}          │
+  │    • posts             │    │  → LPUSH + LTRIM 50 + EX 24h │
+  │    • comments          │    │                              │
+  │    • rooms             │    │  user:online:{id}            │
+  │    • messages          │    │  → SET 1 EX 60 + heartbeat   │
+  │    • follows           │    │                              │
+  │    • followrequests    │    │  typing:{room}:{id}          │
+  │    • moments (TTL)     │    │  → SET username EX 3         │
+  │    • notifications     │    │                              │
+  │    • sosalerts         │    │  otp:{userId}                │
+  │    • trustedcontacts   │    │  → SET code EX 600           │
+  └────────────────────────┘    └──────────────────────────────┘
+               │
+               ▼
+  ┌────────────────────────┐
+  │    Cloudinary CDN      │
+  │    linksy/avatars/     │
+  │    linksy/posts/       │
+  │    linksy/moments/     │
+  │    linksy/chat/        │
+  └────────────────────────┘
+```
+
+---
+
+## 📁 Project Structure
 
 ```
 chat-app/
@@ -283,6 +454,7 @@ chat-app/
 
 ##  API Reference
 
+<<<<<<< HEAD
 ### Authentication
 
 | Method | Endpoint | Auth | Description |
@@ -338,6 +510,186 @@ chat-app/
 
 ### SOS
 
+=======
+## 🚀 Getting Started Locally
+
+### Prerequisites
+- Node.js 18 or higher
+- npm 9 or higher
+- A MongoDB Atlas account (free M0 tier is enough)
+- An Upstash account for Redis (free tier)
+- A Cloudinary account (free tier)
+- A Gmail account with App Password enabled
+
+### Step 1 — Clone the repo
+
+```bash
+git clone https://github.com/YOUR_USERNAME/linksy.git
+cd linksy
+```
+
+### Step 2 — Backend setup
+
+```bash
+cd server
+npm install
+```
+
+Create `server/.env` with these values:
+
+```env
+MONGO_URI=mongodb+srv://username:password@cluster0.mongodb.net/LinKsy_chatApp?retryWrites=true&w=majority
+JWT_SECRET=make_this_at_least_32_random_characters_long
+REDIS_URL=rediss://default:your_password@your-host.upstash.io:6379
+CLOUDINARY_CLOUD_NAME=your_cloud_name
+CLOUDINARY_API_KEY=your_api_key
+CLOUDINARY_API_SECRET=your_api_secret
+EMAIL_USER=your.gmail@gmail.com
+EMAIL_PASS=your_16_char_app_password
+EMAIL_FROM=LinKsy <your.gmail@gmail.com>
+CLIENT_URL=http://localhost:5173
+PORT=5000
+NODE_ENV=development
+```
+
+Start the backend:
+```bash
+npm run dev
+```
+
+Expected terminal output:
+```
+✅ Redis connected
+mongoDB connected
+✅ Email ready
+🚀 Server running on port 5000
+```
+
+### Step 3 — Frontend setup
+
+```bash
+cd ../client
+npm install
+```
+
+Create `client/.env.local`:
+```env
+VITE_API_URL=http://localhost:5000/api
+VITE_SOCKET_URL=http://localhost:5000
+```
+
+Start the frontend:
+```bash
+npm run dev
+```
+
+Open `http://localhost:5173` in your browser.
+
+### Step 4 — Quick test
+
+1. Register with a real email → check inbox for verification email
+2. Click the verification link → account activated
+3. Log in → check inbox for 6-digit OTP → enter it
+4. Open a private/incognito window → register a second account
+5. Follow each other → open a conversation → send messages in real time
+
+---
+
+## 🌐 Deployment Guide
+
+### Deploy Backend to Render
+
+1. Push your code to GitHub
+2. Go to [render.com](https://render.com) → **New** → **Web Service**
+3. Connect your GitHub repository
+4. Configure:
+   - **Root Directory:** `server`
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+   - **Instance Type:** Free
+5. Go to **Environment** tab and add all server `.env` variables
+6. Click **Create Web Service** and watch the deploy logs
+7. Once live, visit `https://your-service.onrender.com/health` — should return `{"status":"ok"}`
+
+### Deploy Frontend to Vercel
+
+1. Go to [vercel.com](https://vercel.com) → **Add New Project**
+2. Import your GitHub repository
+3. Configure:
+   - **Root Directory:** `client`
+   - **Framework Preset:** Vite
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
+4. Add environment variables:
+   ```
+   VITE_API_URL    = https://your-render-url.onrender.com/api
+   VITE_SOCKET_URL = https://your-render-url.onrender.com
+   ```
+5. Click **Deploy**
+6. After deployment, copy your Vercel URL
+7. Go back to **Render** → **Environment** → update `CLIENT_URL` to your Vercel URL
+8. Trigger a manual redeploy on Render
+
+---
+
+## 🔌 API Reference
+
+### Authentication
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/auth/register` | None | Create account + send verification email |
+| GET | `/api/auth/verify-email?token=` | None | Verify email from link |
+| POST | `/api/auth/resend-verification` | None | Resend verification email |
+| POST | `/api/auth/login` | None | Validate credentials + send OTP |
+| POST | `/api/auth/verify-otp` | None | Verify OTP → receive JWT |
+| POST | `/api/auth/resend-otp` | None | Send new OTP code |
+
+### Users
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/api/users` | JWT | List all users except self |
+| GET | `/api/users/:id` | JWT | Get user by ID |
+| GET | `/api/users/:id/profile` | JWT | Full profile with follower and post counts |
+| PUT | `/api/users/me` | JWT | Update bio, username, privacy |
+| POST | `/api/users/me/avatar` | JWT | Upload profile picture (multipart) |
+
+### Posts
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/posts` | JWT | Create post (multipart/form-data) |
+| GET | `/api/posts/feed` | JWT | Posts from followed users, newest first |
+| GET | `/api/posts/user/:userId` | JWT | All posts by a user |
+| POST | `/api/posts/:id/like` | JWT | Toggle like on/off |
+| DELETE | `/api/posts/:id` | JWT | Delete own post |
+
+### Comments
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| GET | `/api/comments/:postId` | JWT | All comments on a post |
+| POST | `/api/comments/:postId` | JWT | Add a comment |
+| DELETE | `/api/comments/:commentId` | JWT | Delete own comment |
+
+### Follow
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| POST | `/api/follow/:userId` | JWT | Follow or send follow request |
+| DELETE | `/api/follow/:userId` | JWT | Unfollow |
+| DELETE | `/api/follow/requests/:userId/cancel` | JWT | Cancel pending request |
+| GET | `/api/follow/requests` | JWT | Incoming follow requests |
+| POST | `/api/follow/requests/:id/accept` | JWT | Accept a follow request |
+| POST | `/api/follow/requests/:id/reject` | JWT | Reject a follow request |
+| GET | `/api/follow/status/:userId` | JWT | Relationship status (iFollow, followsMe, isMutual) |
+| GET | `/api/follow/:userId/followers` | JWT | Followers list |
+| GET | `/api/follow/:userId/following` | JWT | Following list |
+
+### SOS
+
+>>>>>>> d0d3a05 (implemented forgot password system)
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
 | POST | `/api/sos/trigger` | JWT | Trigger alarm + notify trusted contacts |
@@ -380,8 +732,51 @@ Server → Client:
 
 ---
 
+<<<<<<< HEAD
 ## 🔑 Key Technical Decisions Explained
 
+=======
+## 🎨 Design System
+
+**Color palette — pink and black with warm neutrals:**
+
+```js
+// theme.js
+colors = {
+  bg:           '#0E0E10',   // deep charcoal — main background
+  surface:      '#18181A',   // card and panel surfaces
+  surfaceLight: '#222224',   // hover states
+  border:       '#2C2C2A',   // subtle dividers
+  pink:         '#D4537E',   // primary pink accent
+  pinkLight:    '#ED93B1',   // lighter pink for active icons and links
+  pinkPale:     '#F4C0D1',   // palest pink for logo and avatar text
+  pinkDark:     '#993556',   // dark pink for avatar backgrounds
+  textPrimary:  '#F1EFE8',   // warm white for primary text
+  textSecondary:'#B4B2A9',   // slightly dimmed text
+  textMuted:    '#888780',   // placeholder and label text
+  danger:       '#E24B4A',   // SOS red for alerts and errors
+  success:      '#5DCAA5'    // teal green for live indicators
+}
+```
+
+**Icon system — @tabler/icons-react (outline, stroke 1.6):**
+
+| Icon | Usage |
+|---|---|
+| `IconFlower` | Like button on posts |
+| `IconCloud` | Comment button on posts |
+| `IconSpiral` | Home tab in bottom nav |
+| `IconSparkles` | Discover/Search tab |
+| `IconFeather` | Messages tab |
+| `IconCircle` | Account/Profile tab |
+| `IconBell` | Notifications |
+| `IconPlus` | Create post/moment |
+
+---
+
+## 🔑 Key Technical Decisions Explained
+
+>>>>>>> d0d3a05 (implemented forgot password system)
 **Why separate `Follow` and `FollowRequest` collections?**
 Checking "does A follow B?" is done on every profile load, every DM open, and every message send. It must be O(1). A combined collection with a `status` field would require filtering on every lookup. The separate design keeps `Follow` clean — a single indexed query returns the answer instantly.
 
@@ -399,6 +794,17 @@ The receiver-side beep must fire regardless of which page the contact is on. `SO
 
 ---
 
+<<<<<<< HEAD
+=======
+## 🐛 Known Issues
+
+- **Render cold start delay:** Free tier backends spin down after 15 minutes of inactivity. First request after inactivity takes 30–60 seconds. Add a ping every 14 minutes in production to mitigate.
+- **Safari camera recording:** `video/webm` MIME type is unsupported in Safari. The SOS camera recording works in Chrome and Firefox. The sender's local download still works in all browsers via Blob URL.
+- **MediaSource on Safari:** Live video streaming from sender to receiver uses the MediaSource API which has limited Safari support. This is a browser limitation, not a code bug.
+
+---
+
+>>>>>>> d0d3a05 (implemented forgot password system)
 ## 📋 Environment Variables
 
 ### Server (`server/.env`)
@@ -443,13 +849,40 @@ The receiver-side beep must fire regardless of which page the contact is on. `SO
 ---
 
 ## 👩‍💻 Author
+<<<<<<< HEAD
 
 **Shambhavi Mishra**
 
 - Github: https://github.com/ShambhaviMishra07
 - LinkedIn: https://www.linkedin.com/in/shambhavimis02shra
+=======
+
+**Shambhavi Mishra**
+
+- GitHub: (https://github.com/ShambhaviMishra07)
+
+>>>>>>> d0d3a05 (implemented forgot password system)
 
 ---
+
+## 📄 License
+
+MIT License — feel free to use this project as a reference or learning resource.
+
+---
+
+## 🙏 Acknowledgements
+
+- [Socket.io](https://socket.io) — for making real-time WebSocket development approachable
+- [Tabler Icons](https://tabler.io/icons) — for the beautiful, consistent outline icon set
+- [OpenStreetMap + Overpass API](https://overpass-api.de) — for completely free geospatial data requiring no API key
+- [Upstash](https://upstash.com) — for serverless Redis that works seamlessly on free tier
+- [Cloudinary](https://cloudinary.com) — for generous free-tier cloud media storage
+- [Vercel](https://vercel.com) and [Render](https://render.com) — for free hosting that makes production deployment accessible to students
+
+---
+
+*Built with 💗 as a portfolio project demonstrating full-stack engineering, real-time systems, cloud integration, and safety-first product design.*
 
 
 ## 🙏 Acknowledgements
