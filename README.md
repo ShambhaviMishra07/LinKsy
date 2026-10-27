@@ -277,147 +277,158 @@ Additional SOS features:
   └────────────────────────┘
 
 ---
-
-## 🏗️ Architecture
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                   CLIENT  (React + Vite → Vercel)               │
-│  SocketContext wraps the entire app with one persistent socket   │
-│  Global SOS listeners in App.jsx fire beep on any page          │
-└──────────────────┬──────────────────────────┬───────────────────┘
-                   │  REST API (Axios + JWT)   │  WebSocket (Socket.io)
-                   ▼                           ▼
-┌─────────────────────────────────────────────────────────────────┐
-│              SERVER  (Express + Socket.io → Render)              │
-│  auth.middleware.js verifies JWT on every REST request           │
-│  Socket.io middleware verifies JWT on every WS connection        │
-│  Each user joins personal room  user:{userId}  on connect        │
-│  Chat rooms identified by MongoDB Room _id                       │
-└──────────────┬────────────────────────────┬─────────────────────┘
-               │                            │
-               ▼                            ▼
-  ┌────────────────────────┐    ┌──────────────────────────────┐
-  │    MongoDB Atlas       │    │    Redis  (Upstash)          │
-  │    11 collections      │    │                              │
-  │    • users             │    │  room:messages:{id}          │
-  │    • posts             │    │  → LPUSH + LTRIM 50 + EX 24h │
-  │    • comments          │    │                              │
-  │    • rooms             │    │  user:online:{id}            │
-  │    • messages          │    │  → SET 1 EX 60 + heartbeat   │
-  │    • follows           │    │                              │
-  │    • followrequests    │    │  typing:{room}:{id}          │
-  │    • moments (TTL)     │    │  → SET username EX 3         │
-  │    • notifications     │    │                              │
-  │    • sosalerts         │    │  otp:{userId}                │
-  │    • trustedcontacts   │    │  → SET code EX 600           │
-  └────────────────────────┘    └──────────────────────────────┘
-               │
-               ▼
-  ┌────────────────────────┐
-  │    Cloudinary CDN      │
-  │    linksy/avatars/     │
-  │    linksy/posts/       │
-  │    linksy/moments/     │
-  │    linksy/chat/        │
-  └────────────────────────┘
-```
-
----
-
 ## 📁 Project Structure
 
-```
+
 chat-app/
 │
-├── server/
+├── server/                              # Backend — Node.js + Express
+│   │
 │   ├── config/
-│   │   ├── db.js                    # MongoDB Atlas connection with error logging
-│   │   ├── redis.js                 # Upstash Redis with safe wrapper methods
-│   │   ├── cloudinary.js            # Cloudinary config + Multer memory storage
-│   │   └── emailTemplates.js        # Branded HTML email templates (verify + OTP)
+│   │   ├── db.js                        # MongoDB Atlas connection
+│   │   ├── redis.js                     # Upstash Redis + safe wrappers
+│   │   ├── cloudinary.js                # Cloudinary + Multer memory storage
+│   │   └── emailTemplates.js            # Verification & OTP email templates
 │   │
-│   ├── models/
-│   │   ├── User.js                  # isVerified, verificationToken, 2FA fields
-│   │   ├── Post.js                  # mediaUrl, likes[], commentsCount
-│   │   ├── Comment.js               # content, post ref, author ref
-│   │   ├── Room.js                  # isPrivate, isMessageRequest, unreadCounts Map
-│   │   ├── Message.js               # content, type, seenBy[]
-│   │   ├── Follow.js                # follower + following (unique index)
-│   │   ├── FollowRequest.js         # from + to + status (pending/accepted/rejected)
-│   │   ├── Moment.js                # expiresAt with TTL index
-│   │   ├── Notification.js          # type enum covers all notification scenarios
-│   │   ├── SOSAlert.js              # alertType, status, lastLocation, notifiedContacts
-│   │   └── TrustedContact.js        # user + contact + label
+│   ├── models/                          # MongoDB / Mongoose models
+│   │   ├── User.js                      # Users, verification & 2FA
+│   │   ├── Post.js                      # Posts, media, likes & comments
+│   │   ├── Comment.js                   # Post comments
+│   │   ├── Room.js                      # Chat rooms & unread counts
+│   │   ├── Message.js                   # Messages & read receipts
+│   │   ├── Follow.js                    # Follower/following relationships
+│   │   ├── FollowRequest.js             # Follow request workflow
+│   │   ├── Moment.js                    # 24-hour stories with TTL
+│   │   ├── Notification.js              # Application notifications
+│   │   ├── SOSAlert.js                  # SOS alerts & live location
+│   │   └── TrustedContact.js            # Emergency contacts
 │   │
-│   ├── routes/
-│   │   ├── auth.routes.js           # register, verify-email, login, verify-otp
-│   │   ├── user.routes.js           # profile, avatar upload, update
-│   │   ├── post.routes.js           # CRUD, feed query, like toggle
-│   │   ├── comment.routes.js        # create, delete, fetch by post
-│   │   ├── room.routes.js           # rooms, DMs, unread-count, mark-read
-│   │   ├── message.routes.js        # history (cache-first), mark seen
-│   │   ├── follow.routes.js         # follow, unfollow, requests, status check
-│   │   ├── moment.routes.js         # feed (grouped by author), mine, view
-│   │   ├── notification.routes.js   # list, unread-count, mark-read
-│   │   ├── upload.routes.js         # general Cloudinary upload for chat images
-│   │   └── sos.routes.js            # trigger, share-location, resolve, contacts
+│   ├── routes/                          # REST API routes
+│   │   ├── auth.routes.js               # Register, login, email & OTP
+│   │   ├── user.routes.js               # Profile & avatar management
+│   │   ├── post.routes.js               # Posts, feed & likes
+│   │   ├── comment.routes.js            # Comments CRUD
+│   │   ├── room.routes.js               # Chat rooms & unread counts
+│   │   ├── message.routes.js            # Message history & seen status
+│   │   ├── follow.routes.js             # Follow & request management
+│   │   ├── moment.routes.js             # Stories / moments
+│   │   ├── notification.routes.js       # Notifications
+│   │   ├── upload.routes.js             # Chat media uploads
+│   │   └── sos.routes.js                # SOS & emergency features
 │   │
 │   ├── middleware/
-│   │   └── auth.middleware.js       # JWT verify → sets req.user
+│   │   └── auth.middleware.js            # JWT authentication middleware
 │   │
-│   ├── socket/
-│   │   ├── socket.js                # init, Redis adapter, personal rooms, presence
+│   ├── socket/                          # Real-time Socket.IO layer
+│   │   ├── socket.js                    # Socket setup, Redis adapter & presence
 │   │   └── events/
-│   │       ├── message.events.js    # send_message, mark_seen, typing, unread counts
-│   │       ├── room.events.js       # join_room, leave_room
-│   │       └── sos.events.js        # SOS rooms, location relay, video chunk relay
+│   │       ├── message.events.js         # Messages, typing & read receipts
+│   │       ├── room.events.js            # Join / leave chat rooms
+│   │       └── sos.events.js             # SOS location & video streaming
 │   │
 │   ├── utils/
-│   │   └── notifyUser.js            # Creates notification + emits via socket instantly
+│   │   └── notifyUser.js                 # Notification creation + socket emit
 │   │
-│   ├── server.js                    # Express app, CORS, routes, health check, io setup
-│   └── package.json                 # engines: node >=18, start: node server.js
+│   ├── server.js                        # Express app & server entry point
+│   └── package.json                     # Backend dependencies & scripts
 │
-└── client/
+│
+└── client/                              # Frontend — React
+    │
     └── src/
+        │
         ├── api/
-        │   └── axios.js             # baseURL from VITE_API_URL, JWT interceptor
+        │   └── axios.js                 # Axios instance + JWT interceptor
+        │
         ├── context/
-        │   └── SocketContext.jsx    # Single socket for entire app, connectSocket()
+        │   └── SocketContext.jsx        # Global Socket.IO connection
+        │
         ├── hooks/
-        │   └── useUnreadMessages.js # Polls on mount + listens to socket for badge
-        ├── theme.js                 # Pink/black color tokens
-        ├── components/
-        │   ├── BottomNav.jsx        # Spiral, sparkles, feather, circle tabs + badge
-        │   ├── NotificationBell.jsx # Real-time bell with dropdown
-        │   ├── PostCard.jsx         # Media, flower like, cloud comment, captions
-        │   ├── CommentsSheet.jsx    # Slide-up bottom sheet
-        │   ├── SOSButton.jsx        # Alarm only — Web Audio sawtooth oscillator
-        │   ├── SOSCamera.jsx        # Camera preview, recording, chunk sending
-        │   ├── SOSPill.jsx          # Red pill in header linking to /sos
-        │   └── ShareLocationButton.jsx # GPS watcher + socket streaming
-        └── pages/
-            ├── Home.jsx             # Feed + Moments stories row + SOSPill + bell
-            ├── Login.jsx            # Glassmorphism card, password toggle
-            ├── Register.jsx         # Full validation, password strength bar
-            ├── OTPVerify.jsx        # 6 separate digit inputs, auto-advance, paste support
-            ├── VerifyEmail.jsx      # Token verification landing page
-            ├── Messages.jsx         # Inbox with search bar and unread badges
-            ├── Conversation.jsx     # Real-time chat with history, typing, receipts
-            ├── Profile.jsx          # Stats, edit button, Memories, posts grid
-            ├── EditProfile.jsx      # Avatar upload, bio, username, privacy, logout
-            ├── Discover.jsx         # User list with follow/unfollow toggle
-            ├── Requests.jsx         # Pending follow requests with accept/reject
-            ├── CreatePost.jsx       # File select, preview, caption, share
-            ├── CreateMoment.jsx     # Photo/video + caption + 24h expiry info
-            ├── MomentViewer.jsx     # Full screen, progress bars, tap advance
-            ├── FollowersList.jsx    # Clickable list linking to profiles
-            ├── FollowingList.jsx    # Clickable list linking to profiles
-            ├── SOS.jsx              # Hub: alarm button, 2x2 action cards
-            ├── SOSContacts.jsx      # Add/remove trusted contacts
-            ├── SOSTrack.jsx         # Receiver page: coordinates + map link + video
-            └── SafetyMap.jsx        # Leaflet map + Overpass API + directions
+        │   └── useUnreadMessages.js    # Unread message state & updates
+        │
+        ├── theme.js                     # Application design tokens
+        │
+        ├── components/                  # Reusable UI components
+        │   ├── BottomNav.jsx            # Main navigation + badges
+        │   ├── NotificationBell.jsx     # Real-time notifications
+        │   ├── PostCard.jsx              # Post display & interactions
+        │   ├── CommentsSheet.jsx         # Comments bottom sheet
+        │   ├── SOSButton.jsx             # Emergency alarm
+        │   ├── SOSCamera.jsx             # Camera & video recording
+        │   ├── SOSPill.jsx               # SOS navigation indicator
+        │   └── ShareLocationButton.jsx  # Live GPS location sharing
+        │
+        └── pages/                       # Application screens
+            ├── Home.jsx                 # Feed, moments & notifications
+            ├── Login.jsx                # User login
+            ├── Register.jsx             # Account registration
+            ├── OTPVerify.jsx            # Two-factor OTP verification
+            ├── VerifyEmail.jsx          # Email verification
+            ├── Messages.jsx             # Chat inbox
+            ├── Conversation.jsx         # Real-time conversation
+            ├── Profile.jsx              # User profile & posts
+            ├── EditProfile.jsx          # Profile editing & settings
+            ├── Discover.jsx             # Discover & follow users
+            ├── Requests.jsx             # Follow requests
+            ├── CreatePost.jsx            # Create a post
+            ├── CreateMoment.jsx          # Create a 24-hour moment
+            ├── MomentViewer.jsx          # Full-screen story viewer
+            ├── FollowersList.jsx         # Followers
+            ├── FollowingList.jsx         # Following users
+            ├── SOS.jsx                   # Emergency feature hub
+            ├── SOSContacts.jsx           # Trusted contacts
+            ├── SOSTrack.jsx              # Live SOS tracking
+            └── SafetyMap.jsx             # Nearby safety locations & map
+```
+
+### 🏗️ Architecture Overview
+
+| Layer | Technology | Responsibility |
+|---|---|---|
+| **Frontend** | React + Vite | UI, navigation & client state |
+| **API** | Node.js + Express | REST APIs & business logic |
+| **Database** | MongoDB Atlas | Persistent application data |
+| **Cache** | Upstash Redis | Message caching & real-time scaling |
+| **Real-time** | Socket.IO | Messaging, presence & live updates |
+| **Media** | Cloudinary | Image/video storage |
+| **Authentication** | JWT + bcrypt | Authentication & authorization |
+| **Maps** | Leaflet + OpenStreetMap | Location & safety mapping |
+| **Email** | HTML email templates | Verification & OTP emails |
+
+### 🔄 Request & Real-Time Flow
+
+```text
+                    ┌──────────────────┐
+                    │   React Client   │
+                    └────────┬─────────┘
+                             │
+                ┌────────────┴────────────┐
+                │                         │
+             REST API                  Socket.IO
+                │                         │
+                ▼                         ▼
+        ┌───────────────┐         ┌───────────────┐
+        │ Express Server│         │ Socket Server │
+        └───────┬───────┘         └───────┬───────┘
+                │                         │
+        ┌───────┴────────┐        ┌───────┴────────┐
+        │                │        │                │
+        ▼                ▼        ▼                ▼
+   MongoDB Atlas    Cloudinary  Redis         Live Events
+        │                │        │                │
+        └────────────────┴────────┴────────────────┘
+```
+
+### 📌 Key Backend Modules
+
+- **Authentication** — JWT-based authentication, email verification and OTP-based 2FA.
+- **Messaging** — Real-time chat with Socket.IO, message history, typing indicators and read receipts.
+- **Social Features** — Posts, likes, comments, follows, follow requests and 24-hour moments.
+- **Notifications** — Persistent notifications with instant Socket.IO delivery.
+- **Caching** — Redis-backed message history and unread-count handling.
+- **Media Uploads** — Cloudinary integration for profile, post and chat media.
+- **SOS & Safety** — Emergency alerts, trusted contacts, live GPS sharing, camera recording and safety mapping.
+- **Authorization** — Protected API routes using JWT middleware and role-aware access controls.
 ```
 
 ##  API Reference
